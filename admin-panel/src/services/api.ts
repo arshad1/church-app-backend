@@ -1,0 +1,94 @@
+import axios from 'axios';
+
+const API_BASE_URL = '/api';
+
+const api = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
+// Add token to requests
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+// Auth
+export const authAPI = {
+    login: (email: string, password: string) =>
+        api.post('/auth/login', { email, password }),
+    register: (data: any) => api.post('/auth/register', data),
+};
+
+// Admin - Members
+export const membersAPI = {
+    getAll: (params?: any) => api.get('/admin/members', { params }),
+    getById: (id: number) => api.get(`/admin/members/${id}`),
+    create: (data: any) => api.post('/admin/members', data),
+    update: (id: number, data: any) => api.put(`/admin/members/${id}`, data),
+    delete: (id: number) => api.delete(`/admin/members/${id}`),
+    deleteBulk: (ids: number[]) => api.post('/admin/members/delete-bulk', { ids }),
+    approve: (id: number) => api.post(`/admin/members/${id}/approve`),
+};
+
+// Admin - Families
+export const familiesAPI = {
+    getAll: () => api.get('/admin/families'),
+    getById: (id: number) => api.get(`/admin/families/${id}`),
+    create: (data: any) => api.post('/admin/families', data),
+    update: (id: number, data: any) => api.put(`/admin/families/${id}`, data),
+    delete: (id: number) => api.delete(`/admin/families/${id}`),
+};
+
+// Admin - Ministries
+export const ministriesAPI = {
+    getAll: () => api.get('/admin/ministries'),
+    getById: (id: number) => api.get(`/admin/ministries/${id}`),
+    create: (data: any) => api.post('/admin/ministries', data),
+    update: (id: number, data: any) => api.put(`/admin/ministries/${id}`, data),
+    delete: (id: number) => api.delete(`/admin/ministries/${id}`),
+};
+
+// Admin - Events
+export const eventsAPI = {
+    getAll: () => api.get('/admin/events'),
+    getById: (id: number) => api.get(`/admin/events/${id}`),
+    create: (data: any) => api.post('/admin/events', data),
+    update: (id: number, data: any) => api.put(`/admin/events/${id}`, data),
+    delete: (id: number) => api.delete(`/admin/events/${id}`),
+};
+
+// Admin - Reports
+export const reportsAPI = {
+    getDashboard: () => api.get('/admin/reports/dashboard'),
+    getMemberGrowth: (months?: number) =>
+        api.get('/admin/reports/member-growth', { params: { months } }),
+};
+
+export const uploadsAPI = {
+    upload: (file: File) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        return api.post('/common/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+};
+
+export const usersAPI = {
+    getAll: (params?: any) => api.get('/users', { params }),
+    getById: (id: number) => api.get(`/users/${id}`),
+    create: (data: any) => api.post('/users', data),
+    update: (id: number, data: any) => api.put(`/users/${id}`, data),
+    delete: (id: number) => api.delete(`/users/${id}`),
+    deleteBulk: (userIds: number[]) => api.post('/users/delete-bulk', { userIds }),
+};
+
+export default api;

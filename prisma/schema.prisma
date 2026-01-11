@@ -1,0 +1,145 @@
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  role      String   @default("MEMBER") // ADMIN, PASTOR, STAFF, MEMBER
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Link to a specific member profile if this user represents a member
+  memberId  Int?     @unique
+  member    Member?  @relation(fields: [memberId], references: [id])
+
+  announcements Announcement[] 
+}
+
+model Member {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String?  // Contact email
+  phone        String?
+  profileImage String?
+  familyRole   String?
+  headOfFamily Boolean  @default(false)
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relationships
+  familyId    Int?
+  family      Family?      @relation(fields: [familyId], references: [id])
+  
+  user        User?
+
+  sacraments  Sacrament[]
+  ministries  MinistryMember[]
+  registrations Registration[]
+  requests     PrayerRequest[]
+}
+
+model Family {
+  id        Int      @id @default(autoincrement())
+  name      String
+  address   String?
+  phone     String?
+  createdAt DateTime @default(now())
+  members   Member[]
+}
+
+model Sacrament {
+  id        Int      @id @default(autoincrement())
+  type      String   // BAPTISM, CONFIRMATION, MARRIAGE, etc.
+  date      DateTime
+  details   String?
+  memberId  Int
+  member    Member   @relation(fields: [memberId], references: [id])
+}
+
+model Ministry {
+  id        Int      @id @default(autoincrement())
+  name      String
+  description String?
+  members   MinistryMember[]
+}
+
+model MinistryMember {
+  id         Int      @id @default(autoincrement())
+  ministryId Int
+  ministry   Ministry @relation(fields: [ministryId], references: [id])
+  memberId   Int
+  member     Member   @relation(fields: [memberId], references: [id])
+  role       String   @default("MEMBER") // LEADER, MEMBER
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  type        String   @default("EVENT") // SERVICE, EVENT
+  date        DateTime
+  location    String?
+  registrations Registration[]
+}
+
+model Registration {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  event     Event    @relation(fields: [eventId], references: [id])
+  memberId  Int
+  member    Member   @relation(fields: [memberId], references: [id])
+  status    String   @default("REGISTERED")
+  createdAt DateTime @default(now())
+}
+
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+}
+
+model Content {
+  id        Int      @id @default(autoincrement())
+  type      String   // DEVOTION, BIBLE_VERSE, GALLERY
+  title     String
+  body      String?
+  mediaUrl  String?
+  date      DateTime @default(now())
+}
+
+model PrayerRequest {
+  id        Int      @id @default(autoincrement())
+  memberId  Int
+  member    Member   @relation(fields: [memberId], references: [id])
+  request   String
+  status    String   @default("PENDING") // PENDING, ACKNOWLEDGED
+  createdAt DateTime @default(now())
+}
+
+model ChurchSettings {
+  id          Int      @id @default(autoincrement())
+  churchName  String
+  address     String?
+  phone       String?
+  email       String?
+  website     String?
+  logoUrl     String?
+  description String?
+  updatedAt   DateTime @updatedAt
+}

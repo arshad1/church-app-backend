@@ -1,0 +1,66 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Members from './pages/Members';
+import MemberForm from './pages/MemberForm';
+import MemberDetails from './pages/MemberDetails';
+import Layout from './components/Layout';
+import Families from './pages/Families';
+import FamilyForm from './pages/FamilyForm';
+import FamilyDetails from './pages/FamilyDetails';
+import Ministries from './pages/Ministries';
+import Events from './pages/Events';
+import Users from './pages/Users';
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+};
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/*"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/members" element={<Members />} />
+                <Route path="/members/add" element={<MemberForm />} />
+                <Route path="/members/:id" element={<MemberDetails />} />
+                <Route path="/members/:id/edit" element={<MemberForm />} />
+                <Route path="/users" element={<Users />} />
+
+                {/* Families Routes */}
+                <Route path="/families" element={<Families />} />
+                <Route path="/families/add" element={<FamilyForm />} />
+                <Route path="/families/:id" element={<FamilyDetails />} />
+                <Route path="/families/:id/edit" element={<FamilyForm />} />
+
+                {/* Community Routes */}
+                <Route path="/ministries" element={<Ministries />} />
+                <Route path="/events" element={<Events />} />
+              </Routes>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter basename="/admin">
+        <AppRoutes />
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}
+
+export default App;
