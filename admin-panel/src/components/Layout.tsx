@@ -166,14 +166,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center text-white font-bold shadow-lg shadow-primary-900/10 border border-primary-500/20">
                                 {user?.name?.[0] || user?.email?.[0]}
                             </div>
-                            <div className="hidden sm:block">
+                            {/* <div className="hidden sm:block">
                                 <p className="text-sm font-semibold text-gray-900">
                                     {user?.name || user?.email}
                                 </p>
                                 <p className="text-xs text-gray-500">
                                     {user?.role}
                                 </p>
-                            </div>
+                            </div> */}
                             <button
                                 onClick={logout}
                                 className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
