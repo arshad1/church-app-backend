@@ -11,6 +11,26 @@ export const createEvent = async (req: Request, res: Response) => {
     }
 };
 
+export const updateEvent = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id as string);
+        const event = await eventService.updateEvent(id, req.body);
+        res.json(event);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const publishEvent = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id as string);
+        const event = await eventService.publishEvent(id);
+        res.json(event);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 export const getEvents = async (req: Request, res: Response) => {
     try {
         const events = await eventService.getEvents();

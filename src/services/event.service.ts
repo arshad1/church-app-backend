@@ -7,6 +7,25 @@ export const createEvent = async (data: any) => {
     });
 };
 
+export const updateEvent = async (id: number, data: any) => {
+    return prisma.event.update({
+        where: { id },
+        data,
+    });
+};
+
+export const publishEvent = async (id: number) => {
+    const event = await prisma.event.update({
+        where: { id },
+        data: { status: 'PUBLISHED' },
+    });
+
+    // Mock Notification
+    console.log(`[NOTIFICATION] Alert: "${event.title}" is now LIVE! Watch here: ${event.liveUrl}`);
+
+    return event;
+};
+
 export const getEvents = async () => {
     return prisma.event.findMany({
         orderBy: { date: 'asc' },
@@ -14,8 +33,20 @@ export const getEvents = async () => {
 };
 
 export const registerForEvent = async (eventId: number, userId: number) => {
+    // Find member associated with user
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { member: true }
+    });
+
+    if (!user || !user.member) {
+        throw new Error('User must be a registered member to join events');
+    }
+
+    const memberId = user.member.id;
+
     const existing = await prisma.registration.findFirst({
-        where: { eventId, userId },
+        where: { eventId, memberId },
     });
     if (existing) {
         throw new Error('Already registered');
@@ -23,7 +54,7 @@ export const registerForEvent = async (eventId: number, userId: number) => {
     return prisma.registration.create({
         data: {
             eventId,
-            userId,
+            memberId,
         },
     });
 };
@@ -31,6 +62,6 @@ export const registerForEvent = async (eventId: number, userId: number) => {
 export const getEventRegistrations = async (eventId: number) => {
     return prisma.registration.findMany({
         where: { eventId },
-        include: { user: { select: { id: true, name: true, email: true } } }
+        include: { member: { select: { id: true, name: true, email: true } } }
     })
 }

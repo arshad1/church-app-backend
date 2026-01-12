@@ -1,17 +1,37 @@
 import { useState, useEffect } from 'react';
 import { eventsAPI } from '../services/api';
+import moment from 'moment';
 
 interface Event {
     id: number;
     title: string;
+    description?: string;
     date: string;
     location?: string;
+    isLive: boolean;
+    liveUrl?: string;
+    status: 'DRAFT' | 'PUBLISHED';
     registrations?: any[];
 }
 
 export default function Events() {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
+    const [view, setView] = useState<'ALL' | 'LIVE'>('ALL');
+
+    // Modal & Form States
+    const [showModal, setShowModal] = useState(false);
+    const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+    const [formData, setFormData] = useState({
+        title: '',
+        description: '',
+        date: moment().format('YYYY-MM-DDTHH:mm'),
+        location: '',
+        isLive: false,
+        liveUrl: '',
+        status: 'DRAFT'
+    });
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         loadEvents();
@@ -29,16 +49,87 @@ export default function Events() {
         }
     };
 
+    const handleCreateClick = () => {
+        setEditingEvent(null);
+        setFormData({
+            title: '',
+            description: '',
+            date: moment().format('YYYY-MM-DDTHH:mm'),
+            location: '',
+            isLive: false,
+            liveUrl: '',
+            status: 'DRAFT'
+        });
+        setShowModal(true);
+    };
+
+    const handleEditClick = (event: Event) => {
+        setEditingEvent(event);
+        setFormData({
+            title: event.title,
+            description: event.description || '',
+            date: moment(event.date).format('YYYY-MM-DDTHH:mm'),
+            location: event.location || '',
+            isLive: event.isLive,
+            liveUrl: event.liveUrl || '',
+            // Handle legacy events without status by defaulting to PUBLISHED
+            status: event.status || 'PUBLISHED'
+        });
+        setShowModal(true);
+    };
+
+    const handleSubmit = async (e: React.FormEvent, statusOverride?: string) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            const dataToSubmit = {
+                ...formData,
+                date: new Date(formData.date).toISOString(),
+                status: statusOverride || formData.status
+            };
+
+            if (editingEvent) {
+                await eventsAPI.update(editingEvent.id, dataToSubmit);
+            } else {
+                await eventsAPI.create(dataToSubmit);
+            }
+            setShowModal(false);
+            loadEvents();
+        } catch (error) {
+            console.error('Error saving event:', error);
+            alert('Failed to save event');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handlePublish = async (id: number, title: string) => {
+        if (!window.confirm(`Are you sure you want to publish "${title}"? This will notify all members.`)) return;
+        try {
+            await eventsAPI.publish(id);
+            alert(`Event "${title}" published successfully! Members have been notified.`);
+            loadEvents();
+        } catch (error) {
+            console.error('Error publishing event:', error);
+            alert('Failed to publish event');
+        }
+    };
+
+    const filteredEvents = view === 'ALL'
+        ? events
+        : events.filter(e => e.isLive);
+
     return (
         <div>
-            <div className="flex items-center justify-between mb-8">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Events</h2>
-                    <p className="text-sm text-gray-500 mt-1">Upcoming gatherings and services</p>
+                    <h2 className="text-2xl font-bold text-gray-900">Events Management</h2>
+                    <p className="text-sm text-gray-500 mt-1">Schedule services, meetings, and live streams</p>
                 </div>
                 <button
-                    className="bg-gray-100 text-gray-400 px-5 py-2.5 rounded-xl font-bold cursor-not-allowed flex items-center gap-2 border border-gray-200"
-                    disabled
+                    onClick={handleCreateClick}
+                    className="bg-primary-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-primary-900/20 hover:bg-primary-700 transition-colors flex items-center gap-2"
                 >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -47,42 +138,226 @@ export default function Events() {
                 </button>
             </div>
 
+            {/* Tabs */}
+            <div className="flex gap-2 mb-6 border-b border-gray-100">
+                <button
+                    onClick={() => setView('ALL')}
+                    className={`px-4 py-2 font-bold text-sm border-b-2 transition-colors ${view === 'ALL' ? 'border-primary-600 text-primary-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                >
+                    All Events
+                </button>
+                <button
+                    onClick={() => setView('LIVE')}
+                    className={`px-4 py-2 font-bold text-sm border-b-2 transition-colors ${view === 'LIVE' ? 'border-red-500 text-red-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                >
+                    Live & Streamed
+                </button>
+            </div>
+
+            {/* Events Grid */}
             {loading ? (
                 <div className="text-center py-12 text-gray-500">Loading events...</div>
-            ) : events.length === 0 ? (
+            ) : filteredEvents.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 bg-white rounded-3xl border border-gray-100">
                     <p className="font-medium">No events found</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {events.map((event) => (
-                        <div key={event.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="p-3 bg-primary-50 text-primary-700 rounded-xl">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">
-                                        {new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}
+                    {filteredEvents.map((event) => (
+                        <div key={event.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow relative">
+                            {/* Badges */}
+                            <div className="absolute top-4 right-4 flex gap-2">
+                                {event.isLive && (
+                                    <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide border border-red-100 animate-pulse">
+                                        LIVE
+                                    </span>
+                                )}
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border
+                                    ${event.status === 'PUBLISHED' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
+                                    {event.status || 'PUBLISHED'}
+                                </span>
+                            </div>
+
+                            {/* Date & Title */}
+                            <div className="flex items-start gap-4 mb-4">
+                                <div className="text-center bg-gray-50 rounded-xl p-2 min-w-[60px] border border-gray-100">
+                                    <p className="text-xs font-bold text-gray-500 uppercase">
+                                        {moment(event.date).format('MMM')}
                                     </p>
-                                    <p className="text-xl font-black text-gray-900 leading-none">
-                                        {new Date(event.date).getDate()}
+                                    <p className="text-xl font-black text-gray-900 leading-none mt-0.5">
+                                        {moment(event.date).format('DD')}
+                                    </p>
+                                </div>
+                                <div className="flex-1 pt-1">
+                                    <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1 line-clamp-2">{event.title}</h3>
+                                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        {event.location || 'Online'}
                                     </p>
                                 </div>
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-1">{event.title}</h3>
-                            <p className="text-sm text-gray-500 mb-4">{event.location || 'Location TBA'}</p>
 
-                            <div className="pt-4 border-t border-gray-50 flex justify-between items-center text-sm">
-                                <span className="text-gray-500 font-medium">Registrations</span>
-                                <span className="bg-green-100 text-green-700 font-bold px-2 py-1 rounded-lg">
-                                    {event.registrations?.length || 0}
-                                </span>
+                            {/* Additional Info */}
+                            {event.isLive && event.liveUrl && (
+                                <div className="mb-4 bg-red-50/50 p-2 rounded-lg border border-red-100/50">
+                                    <a href={event.liveUrl} target="_blank" rel="noreferrer" className="text-xs font-medium text-red-600 flex items-center gap-1 hover:underline">
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
+                                        </svg>
+                                        Watch Stream
+                                    </a>
+                                </div>
+                            )}
+
+                            {/* Actions */}
+                            <div className="pt-4 border-t border-gray-50 flex items-center justify-between gap-2">
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => handleEditClick(event)}
+                                        className="text-xs font-bold text-gray-500 hover:text-primary-600 px-2 py-1 rounded hover:bg-gray-50 transition-colors"
+                                    >
+                                        Edit
+                                    </button>
+                                    <button className="text-xs font-bold text-gray-500 hover:text-red-600 px-2 py-1 rounded hover:bg-gray-50 transition-colors">
+                                        Delete
+                                    </button>
+                                </div>
+                                {event.status === 'DRAFT' && (
+                                    <button
+                                        onClick={() => handlePublish(event.id, event.title)}
+                                        className="text-xs font-bold text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+                                    >
+                                        Publish
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Create/Edit Modal */}
+            {showModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)} />
+                    <div className="relative bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <h3 className="text-xl font-bold text-gray-900 mb-6">
+                            {editingEvent ? 'Edit Event' : 'Create New Event'}
+                        </h3>
+                        <form onSubmit={(e) => handleSubmit(e)}>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Event Title</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.title}
+                                        onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                        placeholder="e.g. Sunday Service"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Date & Time</label>
+                                        <input
+                                            type="datetime-local"
+                                            required
+                                            value={formData.date}
+                                            onChange={e => setFormData({ ...formData, date: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                                        <input
+                                            type="text"
+                                            value={formData.location}
+                                            onChange={e => setFormData({ ...formData, location: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                            placeholder="e.g. Main Sanctuary"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                    <textarea
+                                        rows={3}
+                                        value={formData.description}
+                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none resize-none"
+                                    />
+                                </div>
+
+                                {/* Live Event Settings */}
+                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <label className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                            <div className={`w-8 h-5 rounded-full p-0.5 transition-colors cursor-pointer ${formData.isLive ? 'bg-red-500' : 'bg-gray-300'}`} onClick={() => setFormData({ ...formData, isLive: !formData.isLive })}>
+                                                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.isLive ? 'translate-x-3' : 'translate-x-0'}`} />
+                                            </div>
+                                            Is this a Live Event?
+                                        </label>
+                                    </div>
+
+                                    {formData.isLive && (
+                                        <div className="animate-fade-in">
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Stream URL (YouTube/Other)</label>
+                                            <input
+                                                type="url"
+                                                value={formData.liveUrl}
+                                                onChange={e => setFormData({ ...formData, liveUrl: e.target.value })}
+                                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none bg-white"
+                                                placeholder="https://youtube.com/watch?v=..."
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowModal(false)}
+                                        className="px-5 py-2.5 rounded-xl text-gray-500 font-bold hover:bg-gray-50"
+                                    >
+                                        Cancel
+                                    </button>
+                                    {!editingEvent || editingEvent.status === 'DRAFT' ? (
+                                        <>
+                                            <button
+                                                type="submit"
+                                                disabled={submitting}
+                                                className="px-5 py-2.5 rounded-xl border-2 border-primary-100 text-primary-700 font-bold hover:bg-primary-50 hover:border-primary-200 transition-colors"
+                                            >
+                                                Save as Draft
+                                            </button>
+                                            <button
+                                                type="button"
+                                                disabled={submitting}
+                                                onClick={(e) => handleSubmit(e, 'PUBLISHED')}
+                                                className="px-5 py-2.5 rounded-xl bg-primary-600 text-white font-bold shadow-lg shadow-primary-900/20 hover:bg-primary-700 transition-colors"
+                                            >
+                                                Publish Now
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button
+                                            type="submit"
+                                            disabled={submitting}
+                                            className="px-5 py-2.5 rounded-xl bg-primary-600 text-white font-bold shadow-lg shadow-primary-900/20 hover:bg-primary-700 transition-colors"
+                                        >
+                                            Update Event
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
         </div>

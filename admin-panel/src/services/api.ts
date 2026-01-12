@@ -75,11 +75,12 @@ export const ministriesAPI = {
 
 // Admin - Events
 export const eventsAPI = {
-    getAll: () => api.get('/admin/events'),
-    getById: (id: number) => api.get(`/admin/events/${id}`),
-    create: (data: any) => api.post('/admin/events', data),
-    update: (id: number, data: any) => api.put(`/admin/events/${id}`, data),
-    delete: (id: number) => api.delete(`/admin/events/${id}`),
+    getAll: () => api.get('/events'),
+    getById: (id: number) => api.get(`/events/${id}`),
+    create: (data: any) => api.post('/events', data),
+    update: (id: number, data: any) => api.put(`/events/${id}`, data),
+    delete: (id: number) => api.delete(`/events/${id}`),
+    publish: (id: number) => api.post(`/events/${id}/publish`),
 };
 
 // Admin - Sacraments

@@ -93,6 +93,9 @@ model Event {
   type        String   @default("EVENT") // SERVICE, EVENT
   date        DateTime
   location    String?
+  isLive      Boolean  @default(false)
+  liveUrl     String?
+  status      String   @default("DRAFT") // DRAFT, PUBLISHED
   registrations Registration[]
 }
 
