@@ -10,6 +10,7 @@ import Families from './pages/Families';
 import FamilyForm from './pages/FamilyForm';
 import FamilyDetails from './pages/FamilyDetails';
 import Ministries from './pages/Ministries';
+import MinistryDetails from './pages/MinistryDetails';
 import Events from './pages/Events';
 import Users from './pages/Users';
 
@@ -43,6 +44,7 @@ function AppRoutes() {
 
                 {/* Community Routes */}
                 <Route path="/ministries" element={<Ministries />} />
+                <Route path="/ministries/:id" element={<MinistryDetails />} />
                 <Route path="/events" element={<Events />} />
               </Routes>
             </Layout>

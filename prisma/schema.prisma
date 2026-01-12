@@ -73,6 +73,7 @@ model Ministry {
   id        Int      @id @default(autoincrement())
   name      String
   description String?
+  meetingSchedule String? // e.g. "Every Sunday 10 AM"
   members   MinistryMember[]
 }
 

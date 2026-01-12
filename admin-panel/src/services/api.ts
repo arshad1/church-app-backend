@@ -18,6 +18,22 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// Add response interceptor to handle 401
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            const isLoginRequest = error.config.url.includes('/auth/login');
+            if (!isLoginRequest) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/admin/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 // Auth
 export const authAPI = {
     login: (email: string, password: string) =>
@@ -52,6 +68,9 @@ export const ministriesAPI = {
     create: (data: any) => api.post('/admin/ministries', data),
     update: (id: number, data: any) => api.put(`/admin/ministries/${id}`, data),
     delete: (id: number) => api.delete(`/admin/ministries/${id}`),
+    addMember: (id: number, userId: number) => api.post(`/admin/ministries/${id}/members`, { userId }),
+    removeMember: (id: number, userId: number) => api.delete(`/admin/ministries/${id}/members/${userId}`),
+    assignLeader: (id: number, userId: number) => api.post(`/admin/ministries/${id}/leader`, { userId }),
 };
 
 // Admin - Events

@@ -45,7 +45,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
 
 export const deleteUser = async (req: Request, res: Response) => {
     try {
-        const userId = parseInt(req.params.id);
+        const userId = parseInt(req.params.id as string);
         await userService.deleteUser(userId);
         res.json({ message: 'User deleted successfully' });
     } catch (error: any) {
@@ -87,7 +87,7 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const updateUser = async (req: Request, res: Response) => {
     try {
-        const userId = parseInt(req.params.id);
+        const userId = parseInt(req.params.id as string);
         const { password, ...data } = req.body;
 
         // If password is included and not empty, hash it

@@ -5,13 +5,13 @@ export const getAllMinistries = async () => {
         include: {
             members: {
                 include: {
-                    user: {
+                    member: {
                         select: {
                             id: true,
                             name: true,
                             email: true,
                             phone: true,
-                            role: true,
+                            profileImage: true,
                         },
                     },
                 },
@@ -26,13 +26,13 @@ export const getMinistryById = async (id: number) => {
         include: {
             members: {
                 include: {
-                    user: {
+                    member: {
                         select: {
                             id: true,
                             name: true,
                             email: true,
                             phone: true,
-                            role: true,
+                            profileImage: true,
                         },
                     },
                 },
@@ -44,6 +44,7 @@ export const getMinistryById = async (id: number) => {
 export const createMinistry = async (data: {
     name: string;
     description?: string;
+    meetingSchedule?: string;
 }) => {
     return prisma.ministry.create({
         data,
@@ -78,7 +79,7 @@ export const assignLeader = async (ministryId: number, userId: number) => {
 
     // Check if user is already a member
     const existing = await prisma.ministryMember.findFirst({
-        where: { ministryId, userId },
+        where: { ministryId, memberId: userId },
     });
 
     if (existing) {
@@ -92,7 +93,7 @@ export const assignLeader = async (ministryId: number, userId: number) => {
         return prisma.ministryMember.create({
             data: {
                 ministryId,
-                userId,
+                memberId: userId,
                 role: 'LEADER',
             },
         });
@@ -102,7 +103,7 @@ export const assignLeader = async (ministryId: number, userId: number) => {
 export const addMember = async (ministryId: number, userId: number) => {
     // Check if already a member
     const existing = await prisma.ministryMember.findFirst({
-        where: { ministryId, userId },
+        where: { ministryId, memberId: userId },
     });
 
     if (existing) {
@@ -112,7 +113,7 @@ export const addMember = async (ministryId: number, userId: number) => {
     return prisma.ministryMember.create({
         data: {
             ministryId,
-            userId,
+            memberId: userId,
             role: 'MEMBER',
         },
     });
@@ -120,7 +121,7 @@ export const addMember = async (ministryId: number, userId: number) => {
 
 export const removeMember = async (ministryId: number, userId: number) => {
     const member = await prisma.ministryMember.findFirst({
-        where: { ministryId, userId },
+        where: { ministryId, memberId: userId },
     });
 
     if (!member) {
