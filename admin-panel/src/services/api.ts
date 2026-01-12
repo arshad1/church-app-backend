@@ -99,6 +99,12 @@ export const reportsAPI = {
         api.get('/admin/reports/member-growth', { params: { months } }),
 };
 
+// Admin - Settings
+export const settingsAPI = {
+    get: () => api.get('/admin/settings'),
+    update: (data: any) => api.put('/admin/settings', data),
+};
+
 export const uploadsAPI = {
     upload: (file: File) => {
         const formData = new FormData();

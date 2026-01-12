@@ -4,10 +4,10 @@ import { authenticate, isAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// All routes require authentication and admin role
+// Routes are mounted at /api/admin/settings
 router.use(authenticate, isAdmin);
 
-router.get('/', settingsController.getChurchSettings);
-router.put('/', settingsController.updateChurchSettings);
+router.get('/', settingsController.getSettings);
+router.put('/', settingsController.updateSettings);
 
 export default router;

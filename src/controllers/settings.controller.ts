@@ -1,20 +1,20 @@
 import { Request, Response } from 'express';
 import * as settingsService from '../services/settings.service';
 
-export const getChurchSettings = async (req: Request, res: Response) => {
+export const getSettings = async (req: Request, res: Response) => {
     try {
-        const settings = await settingsService.getChurchSettings();
+        const settings = await settingsService.getSettings();
         res.json(settings);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
 };
 
-export const updateChurchSettings = async (req: Request, res: Response) => {
+export const updateSettings = async (req: Request, res: Response) => {
     try {
-        const settings = await settingsService.updateChurchSettings(req.body);
+        const settings = await settingsService.updateSettings(req.body);
         res.json(settings);
     } catch (error: any) {
-        res.status(400).json({ message: error.message });
+        res.status(500).json({ message: error.message });
     }
 };
