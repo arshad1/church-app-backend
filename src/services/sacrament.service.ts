@@ -2,15 +2,15 @@ import prisma from '../utils/prisma';
 
 export const getAllSacraments = async (filters?: {
     type?: string;
-    userId?: number;
+    memberId?: number;
 }) => {
     return prisma.sacrament.findMany({
         where: {
             type: filters?.type,
-            userId: filters?.userId,
+            memberId: filters?.memberId,
         },
         include: {
-            user: {
+            member: {
                 select: {
                     id: true,
                     name: true,
@@ -22,9 +22,9 @@ export const getAllSacraments = async (filters?: {
     });
 };
 
-export const getSacramentsByMember = async (userId: number) => {
+export const getSacramentsByMember = async (memberId: number) => {
     return prisma.sacrament.findMany({
-        where: { userId },
+        where: { memberId },
         orderBy: { date: 'desc' },
     });
 };
@@ -32,13 +32,13 @@ export const getSacramentsByMember = async (userId: number) => {
 export const createSacrament = async (data: {
     type: string;
     date: Date;
-    userId: number;
+    memberId: number;
     details?: string;
 }) => {
     return prisma.sacrament.create({
         data,
         include: {
-            user: {
+            member: {
                 select: {
                     id: true,
                     name: true,

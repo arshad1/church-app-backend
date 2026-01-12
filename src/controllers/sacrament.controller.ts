@@ -3,10 +3,10 @@ import * as sacramentService from '../services/sacrament.service';
 
 export const getAllSacraments = async (req: Request, res: Response) => {
     try {
-        const { type, userId } = req.query;
+        const { type, memberId } = req.query;
         const sacraments = await sacramentService.getAllSacraments({
             type: type as string,
-            userId: userId ? parseInt(userId as string) : undefined,
+            memberId: memberId ? parseInt(memberId as string) : undefined,
         });
         res.json(sacraments);
     } catch (error: any) {
@@ -16,8 +16,8 @@ export const getAllSacraments = async (req: Request, res: Response) => {
 
 export const getSacramentsByMember = async (req: Request, res: Response) => {
     try {
-        const userId = parseInt(req.params.memberId as string);
-        const sacraments = await sacramentService.getSacramentsByMember(userId);
+        const memberId = parseInt(req.params.memberId as string);
+        const sacraments = await sacramentService.getSacramentsByMember(memberId);
         res.json(sacraments);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
@@ -26,18 +26,18 @@ export const getSacramentsByMember = async (req: Request, res: Response) => {
 
 export const createSacrament = async (req: Request, res: Response) => {
     try {
-        const { type, date, userId, details } = req.body;
+        const { type, date, memberId, details } = req.body;
 
-        if (!type || !date || !userId) {
+        if (!type || !date || !memberId) {
             return res.status(400).json({
-                message: 'Type, date, and userId are required'
+                message: 'Type, date, and memberId are required'
             });
         }
 
         const sacrament = await sacramentService.createSacrament({
             type,
             date: new Date(date),
-            userId,
+            memberId,
             details,
         });
         res.status(201).json(sacrament);

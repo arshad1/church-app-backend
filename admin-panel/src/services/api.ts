@@ -82,6 +82,15 @@ export const eventsAPI = {
     delete: (id: number) => api.delete(`/admin/events/${id}`),
 };
 
+// Admin - Sacraments
+export const sacramentsAPI = {
+    getAll: (params?: any) => api.get('/admin/sacraments', { params }),
+    getByMember: (memberId: number) => api.get(`/admin/sacraments/member/${memberId}`),
+    create: (data: any) => api.post('/admin/sacraments', data),
+    update: (id: number, data: any) => api.put(`/admin/sacraments/${id}`, data),
+    delete: (id: number) => api.delete(`/admin/sacraments/${id}`),
+};
+
 // Admin - Reports
 export const reportsAPI = {
     getDashboard: () => api.get('/admin/reports/dashboard'),

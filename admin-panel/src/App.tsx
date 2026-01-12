@@ -13,6 +13,7 @@ import Ministries from './pages/Ministries';
 import MinistryDetails from './pages/MinistryDetails';
 import Events from './pages/Events';
 import Users from './pages/Users';
+import Sacraments from './pages/Sacraments';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
@@ -46,6 +47,7 @@ function AppRoutes() {
                 <Route path="/ministries" element={<Ministries />} />
                 <Route path="/ministries/:id" element={<MinistryDetails />} />
                 <Route path="/events" element={<Events />} />
+                <Route path="/sacraments" element={<Sacraments />} />
               </Routes>
             </Layout>
           </ProtectedRoute>
