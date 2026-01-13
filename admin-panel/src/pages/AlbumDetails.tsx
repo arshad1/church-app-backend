@@ -19,16 +19,33 @@ interface Album {
     images: Image[];
 }
 
+interface UploadItem {
+    id: string; // unique ID for tracking
+    file: File;
+    previewUrl: string;
+    progress: number;
+    status: 'pending' | 'uploading' | 'completed' | 'error';
+    uploadedUrl?: string; // stored after successful upload
+}
+
 export default function AlbumDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [album, setAlbum] = useState<Album | null>(null);
     const [loading, setLoading] = useState(true);
-    const [uploading, setUploading] = useState(false);
+
+    // Upload State
+    const [uploadQueue, setUploadQueue] = useState<UploadItem[]>([]);
+    const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (id) loadAlbum();
+
+        // Cleanup object URLs on unmount
+        return () => {
+            uploadQueue.forEach(item => URL.revokeObjectURL(item.previewUrl));
+        };
     }, [id]);
 
     const loadAlbum = async () => {
@@ -43,47 +60,98 @@ export default function AlbumDetails() {
         }
     };
 
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (!files || files.length === 0) return;
 
-        setUploading(true);
-        try {
-            const uploadedUrls: string[] = [];
-            // Upload files individually to get URLs (assuming uploadsAPI handles single file)
-            // Parallel upload
-            const uploadPromises = Array.from(files).map(file => uploadsAPI.upload(file));
-            const responses = await Promise.all(uploadPromises);
+        const newItems: UploadItem[] = Array.from(files).map(file => ({
+            id: Math.random().toString(36).substring(7),
+            file,
+            previewUrl: URL.createObjectURL(file),
+            progress: 0,
+            status: 'pending'
+        }));
 
-            responses.forEach(res => {
-                if (res.data && res.data.file && res.data.file.path) {
-                    // Assuming API returns path relative to backend static serve
-                    // Adjust URL construction based on your backend response
-                    // If backend returns 'uploads/filename.jpg', and we serve static at BASE_URL/uploads
-                    // We might need to prepend base URL or store relative path.
-                    // Let's assume the upload API returns a usable URL or we construct it.
-                    // Typically: http://localhost:5000/uploads/filename.jpg
+        setUploadQueue(prev => [...prev, ...newItems]);
 
-                    // Note: uploadsAPI.upload typically returns { file: { filename, path, ... } }
-                    // We need the full URL to store in DB or relative path. 
-                    // Let's store full URL if possible or ensure backend handles it.
-                    // For now, let's construct it assuming standard static serve
-                    const fullUrl = `http://localhost:5000/${res.data.file.path.replace(/\\/g, '/')}`;
-                    uploadedUrls.push(fullUrl);
+        // Clear input so same files can be selected again if needed (though typically not)
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const processUploadQueue = async () => {
+        if (isUploading || uploadQueue.filter(i => i.status === 'pending').length === 0) return;
+
+        setIsUploading(true);
+        const pendingItems = uploadQueue.filter(i => i.status === 'pending');
+        const successfulUrls: string[] = [];
+
+        // Upload one by one or in small batches. Let's do parallel but capped ? 
+        // For simplicity and better progress visibility, let's do parallel all.
+
+        const uploadPromises = pendingItems.map(async (item) => {
+            try {
+                // Update status to uploading
+                setUploadQueue(prev => prev.map(i => i.id === item.id ? { ...i, status: 'uploading' } : i));
+
+                const res = await uploadsAPI.upload(item.file, (progress) => {
+                    setUploadQueue(prev => prev.map(i => i.id === item.id ? { ...i, progress } : i));
+                });
+
+                // Backend returns { url: "http://..." }
+                if (res.data && res.data.url) {
+                    const fullUrl = res.data.url;
+
+                    setUploadQueue(prev => prev.map(i => i.id === item.id ? {
+                        ...i,
+                        status: 'completed',
+                        progress: 100,
+                        uploadedUrl: fullUrl
+                    } : i));
+                    return fullUrl;
+                } else {
+                    console.error('Invalid response format:', res.data);
+                    throw new Error('Invalid response');
                 }
-            });
-
-            if (uploadedUrls.length > 0) {
-                await galleryAPI.addImages(Number(id), uploadedUrls);
-                await loadAlbum();
+            } catch (error) {
+                console.error(`Error uploading ${item.file.name}:`, error);
+                setUploadQueue(prev => prev.map(i => i.id === item.id ? { ...i, status: 'error', progress: 0 } : i));
+                return null;
             }
-        } catch (error) {
-            console.error('Error uploading images:', error);
-            alert('Failed to upload images');
-        } finally {
-            setUploading(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
+        });
+
+        const results = await Promise.all(uploadPromises);
+
+        // Collect successful URLs
+        results.forEach(url => {
+            if (url) successfulUrls.push(url);
+        });
+
+        // Link with album
+        if (successfulUrls.length > 0) {
+            try {
+                await galleryAPI.addImages(Number(id), successfulUrls);
+                // Refresh album to show new images
+                await loadAlbum();
+
+                // Clear completed items from queue after a short delay
+                setTimeout(() => {
+                    setUploadQueue(prev => prev.filter(i => i.status !== 'completed'));
+                }, 2000); // Keep them visible for 2 seconds to show success
+            } catch (error) {
+                console.error('Error linking images to album:', error);
+                alert('Images uploaded but failed to link to album.');
+            }
         }
+
+        setIsUploading(false);
+    };
+
+    const removeQueueItem = (itemId: string) => {
+        setUploadQueue(prev => {
+            const item = prev.find(i => i.id === itemId);
+            if (item) URL.revokeObjectURL(item.previewUrl);
+            return prev.filter(i => i.id !== itemId);
+        });
     };
 
     const handleDeleteImage = async (imageId: number) => {
@@ -109,6 +177,8 @@ export default function AlbumDetails() {
 
     if (loading) return <div className="p-8 text-center text-gray-500">Loading album...</div>;
     if (!album) return <div className="p-8 text-center text-gray-500">Album not found</div>;
+
+    const pendingCount = uploadQueue.filter(i => i.status === 'pending').length;
 
     return (
         <div className="p-8">
@@ -141,38 +211,105 @@ export default function AlbumDetails() {
                 </div>
             )}
 
-            {/* Upload Section */}
-            <div className="mb-8">
-                <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                    className="hidden"
-                />
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    className="w-full h-32 border-2 border-dashed border-gray-300 rounded-3xl flex flex-col items-center justify-center text-gray-500 hover:border-primary-500 hover:bg-primary-50/50 hover:text-primary-600 transition-all cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {uploading ? (
-                        <div className="flex flex-col items-center gap-3">
-                            <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-                            <span className="font-bold animate-pulse">Uploading photos...</span>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="p-3 bg-gray-100 rounded-full group-hover:bg-primary-100 group-hover:text-primary-600 transition-colors mb-2">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                </svg>
-                            </div>
-                            <span className="font-bold">Click to upload photos</span>
-                            <span className="text-xs mt-1 opacity-70">JPG, PNG supported</span>
-                        </>
+            {/* Upload Area */}
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-8">
+                <div className="p-6 border-b border-gray-50 bg-gray-50/50 flex justify-between items-center">
+                    <h3 className="font-bold text-gray-900">Upload Photos</h3>
+                    {pendingCount > 0 && !isUploading && (
+                        <button
+                            onClick={processUploadQueue}
+                            className="px-4 py-2 bg-primary-600 text-white text-sm font-bold rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-900/10"
+                        >
+                            Start Upload ({pendingCount} files)
+                        </button>
                     )}
-                </button>
+                </div>
+
+                <div className="p-6">
+                    {/* Queue Grid */}
+                    {uploadQueue.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+                            {uploadQueue.map(item => (
+                                <div key={item.id} className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden group border border-gray-200">
+                                    <img src={item.previewUrl} alt="preview" className="w-full h-full object-cover" />
+
+                                    {/* Overlay */}
+                                    <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-2">
+                                        {item.status === 'uploading' && (
+                                            <div className="w-full text-center">
+                                                <div className="text-white text-xs font-bold mb-1">{item.progress}%</div>
+                                                <div className="w-full h-1.5 bg-white/30 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-primary-500 transition-all duration-300"
+                                                        style={{ width: `${item.progress}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                        {item.status === 'completed' && (
+                                            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white shadow-lg">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                        {item.status === 'error' && (
+                                            <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white shadow-lg" title="Upload failed">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                        {item.status === 'pending' && !isUploading && (
+                                            <button
+                                                onClick={() => removeQueueItem(item.id)}
+                                                className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full hover:bg-black/80"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Add More Button */}
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="aspect-square rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-primary-500 hover:text-primary-500 hover:bg-primary-50 transition-all"
+                            >
+                                <svg className="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                                <span className="text-xs font-bold">Add More</span>
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Empty State / Initial Dropzone */}
+                    {uploadQueue.length === 0 && (
+                        <div
+                            onClick={() => fileInputRef.current?.click()}
+                            className="h-40 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center text-gray-500 hover:border-primary-500 hover:bg-primary-50/30 hover:text-primary-600 transition-all cursor-pointer"
+                        >
+                            <svg className="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span className="font-bold text-lg">Drop photos here or click to upload</span>
+                            <span className="text-sm opacity-60 mt-1">Select multiple files at once</span>
+                        </div>
+                    )}
+
+                    <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        ref={fileInputRef}
+                        onChange={handleFileSelect}
+                        className="hidden"
+                    />
+                </div>
             </div>
 
             {/* Images Grid */}
@@ -206,9 +343,9 @@ export default function AlbumDetails() {
                 ))}
             </div>
 
-            {album.images.length === 0 && !uploading && (
-                <div className="text-center py-12 text-gray-400 italic bg-gray-50 rounded-3xl border border-gray-100 border-dashed">
-                    No photos yet. Upload some memories!
+            {album.images.length === 0 && (
+                <div className="text-center py-12 text-gray-400 italic">
+                    Gallery is empty. Select photos above to start uploading.
                 </div>
             )}
         </div>
