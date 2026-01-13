@@ -17,6 +17,8 @@ import reportRoutes from './routes/report.routes';
 import uploadRoutes from './routes/upload.routes';
 import settingsRoutes from './routes/settings.routes';
 import galleryRoutes from './routes/gallery.routes';
+import mobileRoutes from './routes/mobile.routes';
+import notificationRoutes from './routes/notification.routes';
 import swaggerUi from 'swagger-ui-express';
 import * as swaggerDocument from './docs/swagger.json';
 
@@ -51,6 +53,10 @@ app.use('/api/admin/reports', reportRoutes);
 app.use('/api/admin/settings', settingsRoutes);
 app.use('/api/admin/gallery', galleryRoutes);
 
+// Mobile API Routes
+app.use('/api/mobile', mobileRoutes);
+app.use('/api/notifications', notificationRoutes);
+
 // Basic Route
 app.get('/', (req, res) => {
     res.send('Church Management System API');
@@ -66,6 +72,15 @@ app.get('/admin', (req, res) => {
 });
 app.get(/^\/admin\/.*/, (req, res) => {
     res.sendFile(path.join(adminPanelPath, 'index.html'));
+});
+
+// Global Error Handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('Unhandled Error:', err);
+    res.status(500).json({
+        message: 'Internal Server Error',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
 });
 
 export default app;

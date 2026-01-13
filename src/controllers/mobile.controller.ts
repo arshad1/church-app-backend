@@ -1,0 +1,81 @@
+import { Request, Response } from 'express';
+import * as userService from '../services/user.service';
+import * as memberService from '../services/member.service';
+
+/**
+ * Get the current user's deep profile including Family and Member details.
+ */
+export const getMyProfile = async (req: Request, res: Response) => {
+    try {
+        const userId = (req.user as any).userId;
+        const user = await userService.getUserById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Exclude sensitive data
+        const { password, ...userWithoutPassword } = user;
+
+        res.json(userWithoutPassword);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+/**
+ * Get a public directory of members.
+ * Filters out inactive members and limits sensitive personal info if needed.
+ */
+export const getDirectory = async (req: Request, res: Response) => {
+    try {
+        const { search } = req.query;
+
+        const members = await memberService.getAllMembers({
+            status: 'ACTIVE',
+            search: search as string
+        });
+
+        // Map to a simplified directory view if needed, or return full object
+        // For now, returning full object but ensuring only ACTIVE members are shown
+        res.json(members);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+/**
+ * Allow a user to add a member to their family.
+ * Validates that the user has a member profile and a family.
+ */
+export const addFamilyMember = async (req: Request, res: Response) => {
+    try {
+        const userId = (req.user as any).userId;
+        const user = await userService.getUserById(userId);
+
+        if (!user || !user.memberId) {
+            return res.status(400).json({ message: 'User profile not linked to a member' });
+        }
+
+        const member = await memberService.getMemberById(user.memberId);
+        if (!member || !member.familyId) {
+            return res.status(400).json({ message: 'You are not linked to a family' });
+        }
+
+        const { name, familyRole, phone, email, dob } = req.body; // dob if needed
+
+        const newMember = await memberService.createMember({
+            name,
+            familyRole: familyRole || 'MEMBER', // Default to MEMBER
+            phone,
+            email,
+            familyId: member.familyId,
+            status: 'ACTIVE' // Or PENDING if approval needed
+        });
+
+        res.status(201).json(newMember);
+
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
