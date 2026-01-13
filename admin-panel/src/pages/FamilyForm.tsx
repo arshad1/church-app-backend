@@ -11,6 +11,7 @@ export default function FamilyForm() {
         name: '',
         address: '',
         phone: '',
+        houseName: '',
     });
 
     const [loading, setLoading] = useState(false);
@@ -32,6 +33,7 @@ export default function FamilyForm() {
                 name: family.name,
                 address: family.address || '',
                 phone: family.phone || '',
+                houseName: family.houseName || '',
             });
         } catch (error) {
             setError('Failed to load family data');
@@ -128,6 +130,23 @@ export default function FamilyForm() {
                             onChange={handleChange}
                             className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            House Name / Unique ID <span className="text-gray-400 font-normal text-xs ml-1">(Optional)</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="houseName"
+                            value={formData.houseName}
+                            onChange={handleChange}
+                            placeholder="e.g. Thekkan House (Leave blank to auto-generate ID)"
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                        />
+                        <p className="text-xs text-gray-500 mt-1.5 ml-1">
+                            Used to distinguish families with the same name. If left blank, a unique 6-digit ID will be generated.
+                        </p>
                     </div>
 
                     <div>

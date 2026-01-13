@@ -5,6 +5,7 @@ import { membersAPI, familiesAPI, uploadsAPI } from '../services/api';
 interface Family {
     id: number;
     name: string;
+    houseName?: string;
 }
 
 export default function MemberForm() {
@@ -247,7 +248,9 @@ export default function MemberForm() {
                                         >
                                             <option value="">Unassigned</option>
                                             {families.map(f => (
-                                                <option key={f.id} value={f.id}>{f.name}</option>
+                                                <option key={f.id} value={f.id}>
+                                                    {f.name} {f.houseName ? `(${f.houseName})` : ''}
+                                                </option>
                                             ))}
                                         </select>
                                     </div>
@@ -274,8 +277,8 @@ export default function MemberForm() {
                                                     type="button"
                                                     onClick={() => setFormData(prev => ({ ...prev, status }))}
                                                     className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${formData.status === status
-                                                            ? 'bg-primary-900 text-white border-primary-950 shadow-md'
-                                                            : 'bg-white text-gray-400 border-gray-200 hover:border-primary-200'
+                                                        ? 'bg-primary-900 text-white border-primary-950 shadow-md'
+                                                        : 'bg-white text-gray-400 border-gray-200 hover:border-primary-200'
                                                         }`}
                                                 >
                                                     {status.replace('_', ' ')}

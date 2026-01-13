@@ -21,7 +21,7 @@ export const getAllFamilies = async () => {
 };
 
 export const getFamilyById = async (id: number) => {
-    return prisma.family.findUnique({
+    const family = await prisma.family.findUnique({
         where: { id },
         include: {
             members: {
@@ -37,14 +37,94 @@ export const getFamilyById = async (id: number) => {
                     sacraments: true,
                 },
             },
+            relatedTo: {
+                select: {
+                    id: true,
+                    name: true,
+                    houseName: true,
+                },
+            },
+            relatedBy: {
+                select: {
+                    id: true,
+                    name: true,
+                    houseName: true,
+                },
+            },
         },
     });
+
+    if (!family) return null;
+
+    // Merge relatedTo and relatedBy into a single relatedFamilies array
+    const relatedFamilies = [
+        ...family.relatedTo,
+        ...family.relatedBy
+    ];
+
+    // Remove duplicates
+    const uniqueRelatedFamilies = Array.from(new Map(relatedFamilies.map(item => [item.id, item])).values());
+
+    return {
+        ...family,
+        relatedFamilies: uniqueRelatedFamilies
+    };
+};
+
+export const addRelatedFamily = async (id: number, relatedFamilyId: number) => {
+    // Check if they are already related (in either direction)
+    const existingRelation = await prisma.family.findFirst({
+        where: {
+            OR: [
+                { id, relatedTo: { some: { id: relatedFamilyId } } },
+                { id: relatedFamilyId, relatedTo: { some: { id } } }
+            ]
+        }
+    });
+
+    if (existingRelation) {
+        throw new Error('Families are already related');
+    }
+
+    return prisma.family.update({
+        where: { id },
+        data: {
+            relatedTo: {
+                connect: { id: relatedFamilyId }
+            }
+        }
+    });
+};
+
+export const removeRelatedFamily = async (id: number, relatedFamilyId: number) => {
+    // Try disconnecting relatedTo
+    await prisma.family.update({
+        where: { id },
+        data: {
+            relatedTo: {
+                disconnect: { id: relatedFamilyId }
+            }
+        }
+    });
+
+    // Try disconnecting relatedBy (since we don't know the direction)
+    await prisma.family.update({
+        where: { id: relatedFamilyId },
+        data: {
+            relatedTo: {
+                disconnect: { id }
+            }
+        }
+    });
+
+    return { message: 'Relation removed' };
 };
 
 export const createFamily = async (data: {
     name: string;
     address?: string;
     phone?: string;
+    houseName?: string;
 }) => {
     return prisma.family.create({
         data,

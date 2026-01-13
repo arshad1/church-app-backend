@@ -59,6 +59,8 @@ export const familiesAPI = {
     create: (data: any) => api.post('/admin/families', data),
     update: (id: number, data: any) => api.put(`/admin/families/${id}`, data),
     delete: (id: number) => api.delete(`/admin/families/${id}`),
+    addRelated: (id: number, relatedFamilyId: number) => api.post(`/admin/families/${id}/related`, { relatedFamilyId }),
+    removeRelated: (id: number, relatedFamilyId: number) => api.delete(`/admin/families/${id}/related/${relatedFamilyId}`),
 };
 
 // Admin - Ministries

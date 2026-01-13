@@ -7,6 +7,7 @@ interface Family {
     name: string;
     address?: string;
     phone?: string;
+    houseName?: string;
     members?: any[];
     createdAt: string;
 }
@@ -35,7 +36,8 @@ export default function Families() {
 
     const filteredFamilies = families.filter((family) =>
         family.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        family.address?.toLowerCase().includes(searchTerm.toLowerCase())
+        family.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        family.houseName?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -120,7 +122,12 @@ export default function Families() {
                                 </span>
                             </div>
 
-                            <h3 className="text-lg font-bold text-gray-900 mb-2 truncate">{family.name}</h3>
+                            <h3 className="text-lg font-bold text-gray-900 mb-1 truncate">{family.name}</h3>
+                            {family.houseName && (
+                                <span className="inline-block px-2 py-0.5 rounded-md bg-accent-50 text-accent-700 text-[10px] font-bold uppercase tracking-wide mb-3 border border-accent-100">
+                                    {family.houseName}
+                                </span>
+                            )}
 
                             <div className="space-y-2 text-sm text-gray-500">
                                 {family.address && (

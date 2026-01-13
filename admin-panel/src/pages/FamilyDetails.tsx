@@ -18,9 +18,11 @@ const FAMILY_ROLES = ['HEAD', 'SPOUSE', 'FATHER', 'MOTHER', 'SON', 'DAUGHTER', '
 interface Family {
     id: number;
     name: string;
+    houseName?: string;
     address?: string;
     phone?: string;
     members?: Member[];
+    relatedFamilies?: { id: number; name: string; houseName?: string }[];
     createdAt: string;
 }
 
@@ -78,9 +80,73 @@ export default function FamilyDetails() {
         }
     };
 
+    // Related Families Logic
+    const [showLinkFamily, setShowLinkFamily] = useState(false);
+    const [familySearchTerm, setFamilySearchTerm] = useState('');
+    const [searchedFamilies, setSearchedFamilies] = useState<Family[]>([]);
+    const [linkingFamily, setLinkingFamily] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (showLinkFamily) searchFamilies(familySearchTerm);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [familySearchTerm, showLinkFamily]);
+
+    const searchFamilies = async (term: string) => {
+        try {
+            const res = await familiesAPI.getAll(); // Ideally backend should support search param, but filtering client side for now as per existing pattern or if api supports it
+            // Based on Families.tsx, it fetches all.
+            const allFamilies = res.data;
+            const filtered = allFamilies.filter((f: Family) =>
+                f.id !== Number(id) && // Exclude self
+                !family?.relatedFamilies?.some(rf => rf.id === f.id) && // Exclude already related
+                (f.name.toLowerCase().includes(term.toLowerCase()) ||
+                    f.houseName?.toLowerCase().includes(term.toLowerCase()))
+            );
+            setSearchedFamilies(filtered);
+        } catch (error) {
+            console.error('Error searching families:', error);
+        }
+    };
+
+    const handleLinkFamily = async (relatedFamilyId: number) => {
+        setLinkingFamily(true);
+        try {
+            await familiesAPI.addRelated(Number(id), relatedFamilyId);
+            setShowLinkFamily(false);
+            setFamilySearchTerm('');
+            loadFamily();
+        } catch (error) {
+            console.error('Error linking family:', error);
+            alert('Failed to link family');
+        } finally {
+            setLinkingFamily(false);
+        }
+    };
+
+    const handleUnlinkFamily = async (relatedFamilyId: number) => {
+        if (!window.confirm('Are you sure you want to unlink this family?')) return;
+        try {
+            await familiesAPI.removeRelated(Number(id), relatedFamilyId);
+            loadFamily();
+        } catch (error) {
+            console.error('Error unlinking family:', error);
+            alert('Failed to unlink family');
+        }
+    };
+
     const [showAddMember, setShowAddMember] = useState(false);
-    // const [allMembers, setAllMembers] = useState<Member[]>([]); // Removed unused state
-    const [selectedMemberId, setSelectedMemberId] = useState('');
+    const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+    const [viewState, setViewState] = useState<'search' | 'create'>('search');
+
+    // New Member Form State
+    const [newMemberData, setNewMemberData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        familyRole: 'MEMBER'
+    });
     const [addingMember, setAddingMember] = useState(false);
 
     const [filteredMembers, setFilteredMembers] = useState<Member[]>([]);
@@ -110,21 +176,52 @@ export default function FamilyDetails() {
 
     const handleAddMemberClick = async () => {
         setShowAddMember(true);
-        // Load initial list (empty search)
+        setViewState('search');
         setSearchTerm('');
+        setSelectedMemberIds([]);
     };
 
-    const handleAddMemberSubmit = async () => {
-        if (!selectedMemberId) return;
+    const toggleMemberSelection = (memberId: string) => {
+        setSelectedMemberIds(prev =>
+            prev.includes(memberId)
+                ? prev.filter(id => id !== memberId)
+                : [...prev, memberId]
+        );
+    };
+
+    const handleAddMembersSubmit = async () => {
+        if (selectedMemberIds.length === 0) return;
         setAddingMember(true);
         try {
-            await membersAPI.update(Number(selectedMemberId), { familyId: Number(id) });
+            await Promise.all(selectedMemberIds.map(memberId =>
+                membersAPI.update(Number(memberId), { familyId: Number(id) })
+            ));
             setShowAddMember(false);
-            setSelectedMemberId('');
+            setSelectedMemberIds([]);
             loadFamily();
         } catch (error) {
-            console.error('Error adding member:', error);
-            alert('Failed to add member to family');
+            console.error('Error adding members:', error);
+            alert('Failed to add members to family');
+        } finally {
+            setAddingMember(false);
+        }
+    };
+
+    const handleCreateMemberSubmit = async () => {
+        if (!newMemberData.name) return;
+        setAddingMember(true);
+        try {
+            await membersAPI.create({
+                ...newMemberData,
+                familyId: Number(id),
+                status: 'ACTIVE'
+            });
+            setShowAddMember(false);
+            setNewMemberData({ name: '', email: '', phone: '', familyRole: 'MEMBER' });
+            loadFamily();
+        } catch (error) {
+            console.error('Error creating member:', error);
+            alert('Failed to create new member');
         } finally {
             setAddingMember(false);
         }
@@ -174,6 +271,9 @@ export default function FamilyDetails() {
                         </div>
                         <div>
                             <h1 className="text-xl font-black text-gray-900 leading-tight">{family.name}</h1>
+                            {family.houseName && (
+                                <p className="text-sm font-bold text-primary-700">{family.houseName}</p>
+                            )}
                             <p className="text-sm text-gray-500">Created {new Date(family.createdAt).toLocaleDateString()}</p>
                         </div>
                     </div>
@@ -186,6 +286,51 @@ export default function FamilyDetails() {
                         <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Primary Phone</p>
                             <p className="text-sm font-medium text-gray-900">{family.phone || 'No phone provided'}</p>
+                        </div>
+                    </div>
+
+                    {/* Related Families Section */}
+                    <div className="mt-6 border-t border-gray-100 pt-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest">Related Families</h3>
+                            <button
+                                onClick={() => setShowLinkFamily(true)}
+                                className="text-primary-700 hover:text-primary-900 text-xs font-bold flex items-center gap-1"
+                            >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                                Link
+                            </button>
+                        </div>
+
+                        <div className="space-y-3">
+                            {family.relatedFamilies && family.relatedFamilies.length > 0 ? (
+                                family.relatedFamilies.map(rf => (
+                                    <div key={rf.id} className="p-3 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-between group">
+                                        <div>
+                                            <p
+                                                className="text-sm font-bold text-gray-900 cursor-pointer hover:text-primary-700 hover:underline"
+                                                onClick={() => navigate(`/families/${rf.id}`)}
+                                            >
+                                                {rf.name}
+                                            </p>
+                                            {rf.houseName && <p className="text-xs text-gray-500">{rf.houseName}</p>}
+                                        </div>
+                                        <button
+                                            onClick={() => handleUnlinkFamily(rf.id)}
+                                            className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                            title="Unlink Family"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-xs text-gray-400 italic">No related families linked.</p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -362,18 +507,196 @@ export default function FamilyDetails() {
             {showAddMember && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAddMember(false)} />
-                    <div className="relative bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200">
-                        <h3 className="text-xl font-bold text-gray-900 mb-4">Add Family Member</h3>
-                        <p className="text-sm text-gray-500 mb-6">Select a member to add to the <span className="font-bold text-primary-800">{family.name}</span> family.</p>
-
+                    <div className="relative bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
                         <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Select Member</label>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Add Family Members</h3>
+                            <p className="text-sm text-gray-500">Manage members for <span className="font-bold text-primary-800">{family.name}</span> family.</p>
+                        </div>
+
+                        {/* Tabs */}
+                        <div className="flex bg-gray-100 p-1 rounded-xl mb-6 shrink-0">
+                            <button
+                                onClick={() => setViewState('search')}
+                                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${viewState === 'search' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Existing Members
+                            </button>
+                            <button
+                                onClick={() => setViewState('create')}
+                                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${viewState === 'create' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                New Member
+                            </button>
+                        </div>
+
+                        {viewState === 'search' ? (
+                            <>
+                                <div className="mb-4">
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Search by name or phone..."
+                                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all pl-10"
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            autoFocus
+                                        />
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-2 text-xs text-gray-400 flex justify-between">
+                                        <span>Select multiple members to add</span>
+                                        <span className={selectedMemberIds.length > 0 ? 'text-primary-600 font-bold' : ''}>
+                                            {selectedMemberIds.length} selected
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto border border-gray-100 rounded-xl bg-gray-50/50 min-h-0 mb-6">
+                                    {filteredMembers.length === 0 ? (
+                                        <div className="p-8 text-center text-gray-500 text-sm">
+                                            {searchTerm ? 'No matching members found.' : 'Search to find members.'}
+                                        </div>
+                                    ) : (
+                                        <div className="divide-y divide-gray-100">
+                                            {filteredMembers.map((m) => {
+                                                const isSelected = selectedMemberIds.includes(m.id.toString());
+                                                return (
+                                                    <div
+                                                        key={m.id}
+                                                        onClick={() => toggleMemberSelection(m.id.toString())}
+                                                        className={`p-3 cursor-pointer hover:bg-white transition-colors flex items-center justify-between group ${isSelected ? 'bg-primary-50 hover:bg-primary-50' : ''
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-primary-600 border-primary-600' : 'border-gray-300 bg-white'}`}>
+                                                                {isSelected && (
+                                                                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                                    </svg>
+                                                                )}
+                                                            </div>
+                                                            <div>
+                                                                <p className={`font-semibold text-sm ${isSelected ? 'text-primary-900' : 'text-gray-700'}`}>
+                                                                    {m.name || m.email}
+                                                                </p>
+                                                                {m.phone && <p className="text-xs text-gray-500">{m.phone}</p>}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-100">
+                                    <button
+                                        onClick={() => setShowAddMember(false)}
+                                        className="px-5 py-2.5 rounded-xl text-gray-500 font-bold hover:bg-gray-50 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleAddMembersSubmit}
+                                        disabled={selectedMemberIds.length === 0 || addingMember}
+                                        className="px-5 py-2.5 rounded-xl bg-primary-800 text-white font-bold shadow-lg shadow-primary-900/20 hover:bg-primary-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {addingMember ? 'Adding...' : `Add ${selectedMemberIds.length > 0 ? selectedMemberIds.length : ''} Members`}
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex flex-col h-full">
+                                <div className="space-y-4 flex-1 overflow-y-auto pr-1">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Full Name</label>
+                                        <input
+                                            type="text"
+                                            value={newMemberData.name}
+                                            onChange={e => setNewMemberData({ ...newMemberData, name: e.target.value })}
+                                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none text-sm font-semibold"
+                                            placeholder="Enter full name"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email (Optional)</label>
+                                        <input
+                                            type="email"
+                                            value={newMemberData.email}
+                                            onChange={e => setNewMemberData({ ...newMemberData, email: e.target.value })}
+                                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none text-sm font-semibold"
+                                            placeholder="Enter email address"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone (Optional)</label>
+                                        <input
+                                            type="tel"
+                                            value={newMemberData.phone}
+                                            onChange={e => setNewMemberData({ ...newMemberData, phone: e.target.value })}
+                                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none text-sm font-semibold"
+                                            placeholder="Enter phone number"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Family Role</label>
+                                        <select
+                                            value={newMemberData.familyRole}
+                                            onChange={e => setNewMemberData({ ...newMemberData, familyRole: e.target.value })}
+                                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none text-sm font-semibold"
+                                        >
+                                            <option value="HEAD">Head of Family</option>
+                                            <option value="SPOUSE">Spouse</option>
+                                            <option value="SON">Son</option>
+                                            <option value="DAUGHTER">Daughter</option>
+                                            <option value="MEMBER">Member</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                                    <button
+                                        onClick={() => setShowAddMember(false)}
+                                        className="px-5 py-2.5 rounded-xl text-gray-500 font-bold hover:bg-gray-50 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleCreateMemberSubmit}
+                                        disabled={!newMemberData.name || addingMember}
+                                        className="px-5 py-2.5 rounded-xl bg-primary-800 text-white font-bold shadow-lg shadow-primary-900/20 hover:bg-primary-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {addingMember ? 'Creating...' : 'Create Member'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Link Family Modal */}
+            {showLinkFamily && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowLinkFamily(false)} />
+                    <div className="relative bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+                        <div className="mb-4">
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Link Related Family</h3>
+                            <p className="text-sm text-gray-500">Search for a family to link as related (e.g. cousins, siblings).</p>
+                        </div>
+
+                        <div className="mb-4">
                             <div className="relative">
                                 <input
                                     type="text"
-                                    placeholder="Search by name or phone..."
+                                    placeholder="Search families..."
                                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all pl-10"
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onChange={(e) => setFamilySearchTerm(e.target.value)}
+                                    autoFocus
                                 />
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -381,49 +704,41 @@ export default function FamilyDetails() {
                                     </svg>
                                 </div>
                             </div>
-
-                            <div className="mt-2 max-h-60 overflow-y-auto border border-gray-100 rounded-xl bg-gray-50/50">
-                                {filteredMembers.length === 0 ? (
-                                    <div className="p-4 text-center text-gray-500 text-sm">No members found.</div>
-                                ) : (
-                                    filteredMembers.map((m) => (
-                                        <div
-                                            key={m.id}
-                                            onClick={() => setSelectedMemberId(m.id.toString())}
-                                            className={`p-3 cursor-pointer hover:bg-primary-50 transition-colors flex items-center justify-between group ${selectedMemberId === m.id.toString() ? 'bg-primary-50 border-l-4 border-primary-600' : 'border-l-4 border-transparent'
-                                                }`}
-                                        >
-                                            <div>
-                                                <p className={`font-semibold text-sm ${selectedMemberId === m.id.toString() ? 'text-primary-900' : 'text-gray-700'}`}>
-                                                    {m.name || m.email}
-                                                </p>
-                                                {m.phone && <p className="text-xs text-gray-500">{m.phone}</p>}
-                                            </div>
-                                            {selectedMemberId === m.id.toString() && (
-                                                <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            )}
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                            <p className="text-xs text-gray-400 mt-2">Only members not currently in this family are shown.</p>
                         </div>
 
-                        <div className="flex justify-end gap-3">
+                        <div className="flex-1 overflow-y-auto border border-gray-100 rounded-xl bg-gray-50/50 min-h-[300px] mb-6">
+                            {searchedFamilies.length === 0 ? (
+                                <div className="p-8 text-center text-gray-500 text-sm">
+                                    {familySearchTerm ? 'No matching families found.' : 'Search to find families.'}
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-gray-100">
+                                    {searchedFamilies.map(f => (
+                                        <div key={f.id} className="p-3 flex items-center justify-between hover:bg-white transition-colors">
+                                            <div>
+                                                <p className="font-bold text-sm text-gray-900">{f.name}</p>
+                                                {f.houseName && <p className="text-xs text-gray-500">{f.houseName}</p>}
+                                                {f.address && <p className="text-[10px] text-gray-400 truncate max-w-[200px]">{f.address}</p>}
+                                            </div>
+                                            <button
+                                                onClick={() => handleLinkFamily(f.id)}
+                                                disabled={linkingFamily}
+                                                className="px-3 py-1.5 bg-primary-800 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-primary-900 transition-colors disabled:opacity-50"
+                                            >
+                                                {linkingFamily ? 'Linking...' : 'Link'}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end pt-4 border-t border-gray-100">
                             <button
-                                onClick={() => setShowAddMember(false)}
+                                onClick={() => setShowLinkFamily(false)}
                                 className="px-5 py-2.5 rounded-xl text-gray-500 font-bold hover:bg-gray-50 transition-colors"
                             >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleAddMemberSubmit}
-                                disabled={!selectedMemberId || addingMember}
-                                className="px-5 py-2.5 rounded-xl bg-primary-800 text-white font-bold shadow-lg shadow-primary-900/20 hover:bg-primary-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {addingMember ? 'Adding...' : 'Add Member'}
+                                Close
                             </button>
                         </div>
                     </div>

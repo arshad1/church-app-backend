@@ -58,6 +58,11 @@ model Family {
   phone     String?
   createdAt DateTime @default(now())
   members   Member[]
+  houseName String?
+  
+  // Self-relation for related families
+  relatedTo Family[] @relation("FamilyRelations")
+  relatedBy Family[] @relation("FamilyRelations")
 }
 
 model Sacrament {

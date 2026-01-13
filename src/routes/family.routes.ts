@@ -13,4 +13,8 @@ router.post('/', familyController.createFamily);
 router.put('/:id', familyController.updateFamily);
 router.delete('/:id', familyController.deleteFamily);
 
+// Related Families
+router.post('/:id/related', familyController.addRelatedFamily);
+router.delete('/:id/related/:relatedFamilyId', familyController.removeRelatedFamily);
+
 export default router;
