@@ -206,3 +206,14 @@ model Notification {
   data      String?  // JSON string for extra data (e.g. eventId)
   createdAt DateTime @default(now())
 }
+
+model NotificationHistory {
+  id        Int      @id @default(autoincrement())
+  title     String
+  body      String
+  type      String   @default("BROADCAST") // BROADCAST, UNICAST
+  data      String?
+  sentAt    DateTime @default(now())
+  sentBy    Int?     // Optional: ID of admin who sent it
+  status    String   @default("SENT") // SENT, DRAFT
+}

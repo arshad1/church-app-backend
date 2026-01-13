@@ -145,6 +145,23 @@ export const uploadsAPI = {
     },
 };
 
+export const notificationsAPI = {
+    // Admin: Send to specific user
+    sendToUser: (userId: number, title: string, body: string, data?: object) =>
+        api.post('/notifications/send-user', { userId, title, body, data }),
+
+    // Admin: Broadcast
+    broadcast: (title: string, body: string, data?: object, draft: boolean = false) =>
+        api.post('/notifications/broadcast', { title, body, data, draft }),
+
+    // Admin: Update Broadcast (Draft)
+    updateBroadcast: (id: number, title: string, body: string, data?: object, sendNow: boolean = false) =>
+        api.put(`/notifications/broadcast/${id}`, { title, body, data, sendNow }),
+
+    // Admin: History
+    getHistory: () => api.get('/notifications/broadcasts'),
+};
+
 export const usersAPI = {
     getAll: (params?: any) => api.get('/users', { params }),
     getById: (id: number) => api.get(`/users/${id}`),

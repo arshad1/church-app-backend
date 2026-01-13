@@ -44,9 +44,20 @@ export const sendToUser = async (req: Request, res: Response) => {
  */
 export const sendBroadcast = async (req: Request, res: Response) => {
     try {
-        const { title, body, data } = req.body;
-        await notificationService.sendPushToAll(title, body, JSON.stringify(data));
-        res.json({ message: 'Broadcast sent' });
+        const { title, body, data, draft } = req.body;
+        await notificationService.sendPushToAll(title, body, JSON.stringify(data), draft);
+        res.json({ message: draft ? 'Draft saved' : 'Broadcast sent' });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const updateBroadcast = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id as string);
+        const { title, body, data, sendNow } = req.body;
+        await notificationService.updateBroadcast(id, title, body, JSON.stringify(data), sendNow);
+        res.json({ message: sendNow ? 'Broadcast sent' : 'Draft updated' });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
@@ -67,6 +78,15 @@ export const deleteNotification = async (req: Request, res: Response) => {
         const id = parseInt(req.params.id as string);
         await notificationService.deleteNotification(id);
         res.json({ message: 'Notification deleted' });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const getBroadcasts = async (req: Request, res: Response) => {
+    try {
+        const history = await notificationService.getBroadcastHistory();
+        res.json(history);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

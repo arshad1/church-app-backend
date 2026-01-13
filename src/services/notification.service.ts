@@ -89,12 +89,21 @@ export const sendPushToUser = async (userId: number, title: string, body: string
     }
 };
 
-export const sendPushToAll = async (title: string, body: string, data?: string) => {
-    // NOTE: effective strategy for "All" depends on scale.
-    // For < 1000 devices, fetching all tokens works.
-    // For larger, use Firebase Topics ('all_members').
-    // Here we'll toggle to Topic if needed, but let's implement Topic subscription logic later.
-    // For now, let's assume Topic 'all' is subscribed by mobile app on login.
+export const sendPushToAll = async (title: string, body: string, data?: string, isDraft: boolean = false) => {
+    // Save to History first
+    const status = isDraft ? 'DRAFT' : 'SENT';
+    const history = await prisma.notificationHistory.create({
+        data: {
+            title,
+            body,
+            type: 'BROADCAST',
+            data,
+            status
+        }
+    });
+
+    if (isDraft) return history;
+
     try {
         const message: admin.messaging.Message = {
             topic: 'all',
@@ -104,5 +113,44 @@ export const sendPushToAll = async (title: string, body: string, data?: string) 
         await admin.messaging().send(message);
     } catch (error) {
         console.error('Error sending broadcast push:', error);
+        // Used background job for retries in a real production app.
     }
+    return history;
+};
+
+export const updateBroadcast = async (id: number, title: string, body: string, data?: string, sendNow: boolean = false) => {
+    const status = sendNow ? 'SENT' : 'DRAFT';
+
+    // Update the history record
+    const history = await prisma.notificationHistory.update({
+        where: { id },
+        data: {
+            title,
+            body,
+            data,
+            status,
+            sentAt: sendNow ? new Date() : undefined // Update timestamp if sending now
+        }
+    });
+
+    if (sendNow) {
+        try {
+            const message: admin.messaging.Message = {
+                topic: 'all',
+                notification: { title, body },
+                data: data ? JSON.parse(data) : {}
+            };
+            await admin.messaging().send(message);
+        } catch (error) {
+            console.error('Error sending broadcast push from draft:', error);
+        }
+    }
+
+    return history;
+};
+
+export const getBroadcastHistory = async () => {
+    return prisma.notificationHistory.findMany({
+        orderBy: { sentAt: 'desc' }
+    });
 };
