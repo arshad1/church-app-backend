@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SettingsProvider } from './contexts/SettingsContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Members from './pages/Members';
@@ -68,9 +69,11 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter basename="/admin">
-        <AppRoutes />
-      </BrowserRouter>
+      <SettingsProvider>
+        <BrowserRouter basename="/admin">
+          <AppRoutes />
+        </BrowserRouter>
+      </SettingsProvider>
     </AuthProvider>
   );
 }

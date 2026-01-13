@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { settingsAPI, uploadsAPI } from '../services/api';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface Settings {
     id: number;
@@ -14,6 +15,7 @@ interface Settings {
 }
 
 export default function Settings() {
+    const { refreshSettings } = useSettings();
     const [settings, setSettings] = useState<Settings>({
         id: 0,
         churchName: '',
@@ -47,6 +49,7 @@ export default function Settings() {
         try {
             await settingsAPI.update(settings);
             alert('Settings saved successfully!');
+            refreshSettings(); // Sync UI
         } catch (error) {
             console.error('Error saving settings:', error);
             alert('Failed to save settings');
