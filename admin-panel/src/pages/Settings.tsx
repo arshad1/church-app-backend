@@ -10,6 +10,7 @@ interface Settings {
     email: string;
     website: string;
     logoUrl?: string;
+    firebaseConfig?: string;
 }
 
 export default function Settings() {
@@ -170,6 +171,28 @@ export default function Settings() {
                                 value={settings.website || ''}
                                 onChange={e => setSettings({ ...settings, website: e.target.value })}
                                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Firebase Configuration */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 pb-4 border-b border-gray-50">Firebase Configuration</h3>
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Service Account JSON</label>
+                            <p className="text-xs text-gray-400 mb-2">
+                                Paste the content of your Firebase Service Account JSON file here.
+                                (Project Settings {'>'} Service accounts {'>'} Generate new private key)
+                            </p>
+                            <textarea
+                                rows={10}
+                                value={settings.firebaseConfig || ''}
+                                onChange={e => setSettings({ ...settings, firebaseConfig: e.target.value })}
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none font-mono text-xs"
+                                placeholder='{ "type": "service_account", ... }'
                             />
                         </div>
                     </div>

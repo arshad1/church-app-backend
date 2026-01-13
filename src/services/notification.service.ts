@@ -1,19 +1,49 @@
 import prisma from '../utils/prisma';
 import * as admin from 'firebase-admin';
 
-// Initialize Firebase Admin (Wrapped in try-catch to avoid crashing if config is missing)
-try {
-    if (!admin.apps.length) {
-        // Check if service account is available via env or file
-        // For now, we'll assume it's set up later or use default app credentials
+// Initialize Firebase Admin Logic
+let isFirebaseInitialized = false;
+
+export const initializeFirebase = async () => {
+    if (admin.apps.length) {
+        return; // Already initialized
+    }
+
+    try {
+        // Try to fetch from DB settings first
+        const settings = await prisma.churchSettings.findFirst();
+
+        if (settings?.firebaseConfig) {
+            const serviceAccount = JSON.parse(settings.firebaseConfig);
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount)
+            });
+            console.log('Firebase Admin Initialized from Database Settings');
+            isFirebaseInitialized = true;
+            return;
+        }
+
+        // Fallback to environment/default
         admin.initializeApp({
             credential: admin.credential.applicationDefault()
         });
-        console.log('Firebase Admin Initialized');
+        console.log('Firebase Admin Initialized from Default Credentials');
+        isFirebaseInitialized = true;
+
+    } catch (error) {
+        console.warn('Failed to initialize Firebase Admin:', error);
     }
-} catch (error) {
-    console.warn('Failed to initialize Firebase Admin:', error);
-}
+};
+
+// Call init on load (optional, or call lazily)
+initializeFirebase();
+
+export const reinitializeFirebase = async () => {
+    if (admin.apps.length) {
+        await Promise.all(admin.apps.map(app => app?.delete()));
+    }
+    await initializeFirebase();
+};
 
 export const registerDeviceToken = async (userId: number, token: string, platform: string) => {
     return prisma.deviceToken.upsert({

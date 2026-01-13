@@ -162,6 +162,7 @@ model ChurchSettings {
   website     String?
   logoUrl     String?
   description String?
+  firebaseConfig String?  @db.Text // Store Firebase Service Account JSON
   updatedAt   DateTime @updatedAt
 }
 
