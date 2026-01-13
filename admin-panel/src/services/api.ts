@@ -101,6 +101,26 @@ export const reportsAPI = {
         api.get('/admin/reports/member-growth', { params: { months } }),
 };
 
+// Admin - Gallery
+export const galleryAPI = {
+    // Categories
+    createCategory: (name: string) => api.post('/admin/gallery/categories', { name }),
+    getAllCategories: () => api.get('/admin/gallery/categories'),
+    updateCategory: (id: number, name: string) => api.put(`/admin/gallery/categories/${id}`, { name }),
+    deleteCategory: (id: number) => api.delete(`/admin/gallery/categories/${id}`),
+
+    // Albums
+    createAlbum: (data: any) => api.post('/admin/gallery/albums', data),
+    getAllAlbums: (categoryId?: number) => api.get('/admin/gallery/albums', { params: { categoryId } }),
+    getAlbumById: (id: number) => api.get(`/admin/gallery/albums/${id}`),
+    updateAlbum: (id: number, data: any) => api.put(`/admin/gallery/albums/${id}`, data),
+    deleteAlbum: (id: number) => api.delete(`/admin/gallery/albums/${id}`),
+
+    // Images
+    addImages: (albumId: number, imageUrls: string[]) => api.post(`/admin/gallery/albums/${albumId}/images`, { imageUrls }),
+    deleteImage: (id: number) => api.delete(`/admin/gallery/images/${id}`),
+};
+
 // Admin - Settings
 export const settingsAPI = {
     get: () => api.get('/admin/settings'),

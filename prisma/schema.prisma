@@ -152,3 +152,33 @@ model ChurchSettings {
   description String?
   updatedAt   DateTime @updatedAt
 }
+
+model GalleryCategory {
+  id        Int      @id @default(autoincrement())
+  name      String
+  albums    GalleryAlbum[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GalleryAlbum {
+  id           Int      @id @default(autoincrement())
+  title        String
+  description  String?
+  coverImage   String?
+  date         DateTime @default(now())
+  categoryId   Int
+  category     GalleryCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  images       GalleryImage[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model GalleryImage {
+  id        Int      @id @default(autoincrement())
+  url       String
+  caption   String?
+  albumId   Int
+  album     GalleryAlbum @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}

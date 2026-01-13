@@ -16,6 +16,7 @@ import prayerRoutes from './routes/prayer.routes';
 import reportRoutes from './routes/report.routes';
 import uploadRoutes from './routes/upload.routes';
 import settingsRoutes from './routes/settings.routes';
+import galleryRoutes from './routes/gallery.routes';
 import swaggerUi from 'swagger-ui-express';
 import * as swaggerDocument from './docs/swagger.json';
 
@@ -48,6 +49,7 @@ app.use('/api/admin/sacraments', sacramentRoutes);
 app.use('/api/admin/prayers', prayerRoutes);
 app.use('/api/admin/reports', reportRoutes);
 app.use('/api/admin/settings', settingsRoutes);
+app.use('/api/admin/gallery', galleryRoutes);
 
 // Basic Route
 app.get('/', (req, res) => {

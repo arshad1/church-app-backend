@@ -15,6 +15,8 @@ import Events from './pages/Events';
 import Users from './pages/Users';
 import Sacraments from './pages/Sacraments';
 import Settings from './pages/Settings';
+import Gallery from './pages/Gallery';
+import AlbumDetails from './pages/AlbumDetails';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
@@ -49,6 +51,8 @@ function AppRoutes() {
                 <Route path="/ministries/:id" element={<MinistryDetails />} />
                 <Route path="/events" element={<Events />} />
                 <Route path="/sacraments" element={<Sacraments />} />
+                <Route path="/gallery" element={<Gallery />} />
+                <Route path="/gallery/albums/:id" element={<AlbumDetails />} />
                 <Route path="/settings" element={<Settings />} />
               </Routes>
             </Layout>
