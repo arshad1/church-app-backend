@@ -91,6 +91,8 @@ This document outlines the phased development plan and API integration specifica
 1.  **My Profile**: Personal details + Family Card.
 2.  **Member Directory**: Searchable list of all members.
 3.  **Family View**: Deep dive into family members.
+4.  **Update Family**: Option to update family member details.
+5.  **Add Family Member**: Option to create and add a new family member.
 
 ### API Specifications
 
@@ -116,6 +118,40 @@ This document outlines the phased development plan and API integration specifica
 -   **Query Params**: `?search=john`
 -   **Response**: List of members with minimal details (Name, Family, Phone).
 
+#### 3. Update Family Member
+-   **[NEW] Endpoint**: `PUT /api/mobile/family/members/:memberId`
+-   **Request**:
+    ```json
+    {
+        "firstName": "Jane",
+        "lastName": "Doe",
+        "mobile": "9876543210",
+        "dob": "1995-05-15",
+        "relationship": "SPOUSE"
+    }
+    ```
+-   **Response**:
+    ```json
+    { "success": true, "message": "Family member updated successfully" }
+    ```
+
+#### 4. Add Family Member
+-   **[NEW] Endpoint**: `POST /api/mobile/family/members`
+-   **Request**:
+    ```json
+    {
+        "firstName": "Baby",
+        "lastName": "Doe",
+        "mobile": "",
+        "dob": "2023-01-01",
+        "relationship": "CHILD"
+    }
+    ```
+-   **Response**:
+    ```json
+    { "success": true, "message": "Family member added successfully", "id": 123 }
+    ```
+
 ### UI Requirements
 *   **[Pending]** Profile Screen Design (User to provide)
 *   **[Pending]** Directory List Design (User to provide)
@@ -133,10 +169,12 @@ This document outlines the phased development plan and API integration specifica
 ### API Specifications
 
 #### 1. Get Categories
--   **Endpoint**: `GET /api/admin/gallery/categories` (Need validation if public access is allowed)
+-   **Endpoint**: `GET /api/mobile/gallery/categories`
+-   **Response**: List of gallery categories.
 
 #### 2. Get Albums
--   **Endpoint**: `GET /api/admin/gallery/albums?categoryId=1`
+-   **Endpoint**: `GET /api/mobile/gallery/albums?categoryId=1`
+-   **Response**: List of albums, optionally filtered by category.
 
 ### UI Requirements
 *   **[Pending]** Gallery Grid Design (User to provide)

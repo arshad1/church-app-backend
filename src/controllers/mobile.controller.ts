@@ -79,3 +79,53 @@ export const addFamilyMember = async (req: Request, res: Response) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+/**
+ * Allow a user to update a family member's details.
+ * Validates that the user belongs to the same family as the member being updated.
+ */
+export const updateFamilyMember = async (req: Request, res: Response) => {
+    try {
+        const userId = (req.user as any).userId;
+        const memberIdToUpdate = parseInt(req.params.memberId as string);
+
+        const user = await userService.getUserById(userId);
+        if (!user || !user.memberId) {
+            return res.status(400).json({ message: 'User profile not linked to a member' });
+        }
+
+        const currentUserMember = await memberService.getMemberById(user.memberId);
+        if (!currentUserMember || !currentUserMember.familyId) {
+            return res.status(400).json({ message: 'You are not linked to a family' });
+        }
+
+        const memberToUpdate = await memberService.getMemberById(memberIdToUpdate);
+        if (!memberToUpdate) {
+            return res.status(404).json({ message: 'Member not found' });
+        }
+
+        // Check if the member belongs to the same family
+        if (memberToUpdate.familyId !== currentUserMember.familyId) {
+            return res.status(403).json({ message: 'You can only update members of your own family' });
+        }
+
+        const { firstName, lastName, mobile, dob, relationship } = req.body;
+
+        // Construct update data - map PRD fields to schema fields if necessary
+        // Assuming schema uses name, phone, familyRole, dob
+        const updateData: any = {};
+        if (firstName || lastName) {
+            updateData.name = `${firstName || ''} ${lastName || ''}`.trim();
+        }
+        if (mobile) updateData.phone = mobile;
+        if (dob) updateData.dob = new Date(dob); // Ensure DOB is handled if schema supports it
+        if (relationship) updateData.familyRole = relationship;
+
+        const updatedMember = await memberService.updateMember(memberIdToUpdate, updateData);
+
+        res.json({ success: true, message: 'Family member updated successfully', member: updatedMember });
+
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
