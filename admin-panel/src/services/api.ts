@@ -27,7 +27,10 @@ api.interceptors.response.use(
             if (!isLoginRequest) {
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
-                window.location.href = '/admin/login';
+                //do not redirect if it is login page
+                if (window.location.pathname !== '/admin/login') {
+                    window.location.href = '/admin/login';
+                }
             }
         }
         return Promise.reject(error);
