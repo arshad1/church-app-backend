@@ -27,7 +27,7 @@ api.interceptors.response.use(
             if (!isLoginRequest) {
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
-                window.location.href = '/admin/login';
+                //window.location.href = '/admin/login';
             }
         }
         return Promise.reject(error);
@@ -169,6 +169,12 @@ export const usersAPI = {
     update: (id: number, data: any) => api.put(`/users/${id}`, data),
     delete: (id: number) => api.delete(`/users/${id}`),
     deleteBulk: (userIds: number[]) => api.post('/users/delete-bulk', { userIds }),
+};
+
+export const contentAPI = {
+    // Generic Content (e.g., BIBLE_VERSE)
+    getAll: (type: string) => api.get(`/content/${type}`),
+    create: (data: any) => api.post('/content', data),
 };
 
 export default api;

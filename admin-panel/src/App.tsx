@@ -19,6 +19,7 @@ import Settings from './pages/Settings';
 import Gallery from './pages/Gallery';
 import AlbumDetails from './pages/AlbumDetails';
 import Notifications from './pages/Notifications';
+import DailyVerses from './pages/DailyVerses';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
@@ -56,6 +57,7 @@ function AppRoutes() {
                 <Route path="/gallery" element={<Gallery />} />
                 <Route path="/gallery/albums/:id" element={<AlbumDetails />} />
                 <Route path="/notifications" element={<Notifications />} />
+                <Route path="/daily-verses" element={<DailyVerses />} />
                 <Route path="/settings" element={<Settings />} />
               </Routes>
             </Layout>
