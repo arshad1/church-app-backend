@@ -43,3 +43,24 @@ export const getContent = async (req: Request, res: Response) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+export const updateContent = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id as string);
+        const { title, body, mediaUrl } = req.body;
+        const content = await contentService.updateContent(id, title, body, mediaUrl);
+        res.json(content);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const deleteContent = async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id as string);
+        await contentService.deleteContent(id);
+        res.status(204).send();
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};

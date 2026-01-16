@@ -39,11 +39,10 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use('/api/auth', authRoutes);
 app.use('/api/common', uploadRoutes); // Use a common prefix or just /api/upload
 app.use('/api/users', userRoutes);
-// ... others
-app.use('/api/events', eventRoutes);
-app.use('/api/content', contentRoutes);
 
 // Admin API Routes
+app.use('/api/admin/content', contentRoutes);
+app.use('/api/admin/events', eventRoutes);
 app.use('/api/admin/members', memberRoutes);
 app.use('/api/admin/families', familyRoutes);
 app.use('/api/admin/ministries', ministryRoutes);

@@ -13,5 +13,7 @@ router.post('/announcements', authenticate, isAdmin, contentController.createAnn
 // Using type parameter in path
 router.get('/:type', contentController.getContent);
 router.post('/', authenticate, isAdmin, contentController.createContent);
+router.put('/:id', authenticate, isAdmin, contentController.updateContent);
+router.delete('/:id', authenticate, isAdmin, contentController.deleteContent);
 
 export default router;
