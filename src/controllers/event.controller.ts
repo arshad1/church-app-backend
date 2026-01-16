@@ -33,7 +33,22 @@ export const publishEvent = async (req: Request, res: Response) => {
 
 export const getEvents = async (req: Request, res: Response) => {
     try {
-        const events = await eventService.getEvents();
+        const featured = req.query.featured === 'true';
+        const events = await eventService.getEvents({ featured });
+        res.json(events);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const getMobileEvents = async (req: Request, res: Response) => {
+    try {
+        const featured = req.query.featured === 'true';
+        // Mobile users should only see PUBLISHED events
+        const events = await eventService.getEvents({
+            featured,
+            status: 'PUBLISHED'
+        });
         res.json(events);
     } catch (error: any) {
         res.status(500).json({ message: error.message });

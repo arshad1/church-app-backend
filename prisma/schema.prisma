@@ -113,6 +113,7 @@ model Event {
   isLive      Boolean  @default(false)
   liveUrl     String?
   status      String   @default("DRAFT") // DRAFT, PUBLISHED
+  isFeatured  Boolean  @default(false)
   registrations Registration[]
 }
 

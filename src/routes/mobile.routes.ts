@@ -22,7 +22,7 @@ router.get('/announcements', contentController.getAnnouncements);
 router.get('/content/:type', contentController.getContent);
 
 // Events - Read-only access for mobile app
-router.get('/events', eventController.getEvents);
+router.get('/events', eventController.getMobileEvents);
 
 // Gallery - Read-only access for mobile app
 router.get('/gallery/categories', galleryController.getAllCategories);

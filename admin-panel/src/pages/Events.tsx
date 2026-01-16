@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { eventsAPI } from '../services/api';
 import moment from 'moment';
 
+// Update Interface
 interface Event {
     id: number;
     title: string;
@@ -12,12 +13,13 @@ interface Event {
     liveUrl?: string;
     status: 'DRAFT' | 'PUBLISHED';
     registrations?: any[];
+    isFeatured: boolean; // Added
 }
 
 export default function Events() {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
-    const [view, setView] = useState<'ALL' | 'LIVE'>('ALL');
+    const [view, setView] = useState<'ALL' | 'LIVE' | 'FEATURED'>('ALL'); // Added FEATURED view if needed
 
     // Modal & Form States
     const [showModal, setShowModal] = useState(false);
@@ -29,7 +31,8 @@ export default function Events() {
         location: '',
         isLive: false,
         liveUrl: '',
-        status: 'DRAFT'
+        status: 'DRAFT',
+        isFeatured: false // Added
     });
     const [submitting, setSubmitting] = useState(false);
 
@@ -58,7 +61,8 @@ export default function Events() {
             location: '',
             isLive: false,
             liveUrl: '',
-            status: 'DRAFT'
+            status: 'DRAFT',
+            isFeatured: false
         });
         setShowModal(true);
     };
@@ -73,7 +77,8 @@ export default function Events() {
             isLive: event.isLive,
             liveUrl: event.liveUrl || '',
             // Handle legacy events without status by defaulting to PUBLISHED
-            status: event.status || 'PUBLISHED'
+            status: event.status || 'PUBLISHED',
+            isFeatured: event.isFeatured || false
         });
         setShowModal(true);
     };
@@ -117,7 +122,7 @@ export default function Events() {
 
     const filteredEvents = view === 'ALL'
         ? events
-        : events.filter(e => e.isLive);
+        : view === 'LIVE' ? events.filter(e => e.isLive) : events.filter(e => e.isFeatured);
 
     return (
         <div>
@@ -152,6 +157,12 @@ export default function Events() {
                 >
                     Live & Streamed
                 </button>
+                <button
+                    onClick={() => setView('FEATURED')}
+                    className={`px-4 py-2 font-bold text-sm border-b-2 transition-colors ${view === 'FEATURED' ? 'border-yellow-500 text-yellow-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                >
+                    Featured
+                </button>
             </div>
 
             {/* Events Grid */}
@@ -164,9 +175,14 @@ export default function Events() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredEvents.map((event) => (
-                        <div key={event.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow relative">
+                        <div key={event.id} className={`bg-white rounded-2xl shadow-sm border p-6 hover:shadow-md transition-shadow relative ${event.isFeatured ? 'border-yellow-200 bg-yellow-50/10' : 'border-gray-100'}`}>
                             {/* Badges */}
                             <div className="absolute top-4 right-4 flex gap-2">
+                                {event.isFeatured && (
+                                    <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide border border-yellow-200">
+                                        FEATURED
+                                    </span>
+                                )}
                                 {event.isLive && (
                                     <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide border border-red-100 animate-pulse">
                                         LIVE
@@ -294,9 +310,21 @@ export default function Events() {
                                     />
                                 </div>
 
-                                {/* Live Event Settings */}
-                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                    <div className="flex items-center justify-between mb-4">
+                                {/* Event Settings */}
+                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-4">
+
+                                    {/* Featured Toggle */}
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                            <div className={`w-8 h-5 rounded-full p-0.5 transition-colors cursor-pointer ${formData.isFeatured ? 'bg-yellow-500' : 'bg-gray-300'}`} onClick={() => setFormData({ ...formData, isFeatured: !formData.isFeatured })}>
+                                                <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.isFeatured ? 'translate-x-3' : 'translate-x-0'}`} />
+                                            </div>
+                                            Featured Event (Show on Home)
+                                        </label>
+                                    </div>
+
+                                    {/* Live Event Settings */}
+                                    <div className="flex items-center justify-between">
                                         <label className="text-sm font-bold text-gray-900 flex items-center gap-2">
                                             <div className={`w-8 h-5 rounded-full p-0.5 transition-colors cursor-pointer ${formData.isLive ? 'bg-red-500' : 'bg-gray-300'}`} onClick={() => setFormData({ ...formData, isLive: !formData.isLive })}>
                                                 <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.isLive ? 'translate-x-3' : 'translate-x-0'}`} />
@@ -306,7 +334,7 @@ export default function Events() {
                                     </div>
 
                                     {formData.isLive && (
-                                        <div className="animate-fade-in">
+                                        <div className="animate-fade-in pt-2">
                                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Stream URL (YouTube/Other)</label>
                                             <input
                                                 type="url"

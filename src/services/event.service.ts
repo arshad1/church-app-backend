@@ -26,8 +26,17 @@ export const publishEvent = async (id: number) => {
     return event;
 };
 
-export const getEvents = async () => {
+export const getEvents = async (filters?: { featured?: boolean; status?: string }) => {
+    const where: any = {};
+    if (filters?.featured) {
+        where.isFeatured = true;
+    }
+    if (filters?.status) {
+        where.status = filters.status;
+    }
+
     return prisma.event.findMany({
+        where,
         orderBy: { date: 'asc' },
     });
 };
