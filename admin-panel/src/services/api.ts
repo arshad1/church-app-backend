@@ -186,7 +186,7 @@ export const housesAPI = {
 
 export const contentAPI = {
     // Generic Content (e.g., BIBLE_VERSE)
-    getAll: (type: string) => api.get(`/admin/content/${type}`),
+    getAll: (type: string, params?: any) => api.get(`/admin/content/${type}`, { params }),
     create: (data: any) => api.post('/admin/content', data),
     update: (id: number, data: any) => api.put(`/admin/content/${id}`, data),
     delete: (id: number) => api.delete(`/admin/content/${id}`),

@@ -3,10 +3,13 @@ import * as sacramentService from '../services/sacrament.service';
 
 export const getAllSacraments = async (req: Request, res: Response) => {
     try {
-        const { type, memberId } = req.query;
+        const { type, memberId, page, limit, search } = req.query;
         const sacraments = await sacramentService.getAllSacraments({
             type: type as string,
             memberId: memberId ? parseInt(memberId as string) : undefined,
+            page: page ? parseInt(page as string) : 1,
+            limit: limit ? parseInt(limit as string) : 10,
+            search: search as string,
         });
         res.json(sacraments);
     } catch (error: any) {

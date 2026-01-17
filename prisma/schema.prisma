@@ -188,6 +188,7 @@ model ChurchSettings {
   logoUrl     String?
   description String?
   firebaseConfig String?  @db.Text // Store Firebase Service Account JSON
+  showRandomVerse Boolean  @default(false)
   updatedAt   DateTime @updatedAt
 }
 

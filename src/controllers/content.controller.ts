@@ -37,7 +37,28 @@ export const createContent = async (req: Request, res: Response) => {
 export const getContent = async (req: Request, res: Response) => {
     try {
         const type = (req.params.type as string).toUpperCase(); // Ensure uppercase for consistency
-        const content = await contentService.getContentByType(type);
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+
+        // Special handling for Mobile Daily Verses
+        if (req.baseUrl.includes('/mobile') && type === 'BIBLE_VERSE') {
+            const { getSettings } = require('../services/settings.service');
+            const settings = await getSettings();
+
+            if (settings.showRandomVerse) {
+                // Fetch all verses (or a large subset) to pick random
+                // Optimization: In a real app with millions of rows, use COUNT based random offset.
+                // For now, fetching first 1000 is likely sufficient for church scale.
+                const allVerses = await contentService.getContentByType(type, 1, 1000);
+                if (allVerses.data.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * allVerses.data.length);
+                    // Return as array to match expected format
+                    return res.json([allVerses.data[randomIndex]]);
+                }
+            }
+        }
+
+        const content = await contentService.getContentByType(type, page, limit);
         res.json(content);
     } catch (error: any) {
         res.status(500).json({ message: error.message });

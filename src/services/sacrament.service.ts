@@ -1,25 +1,56 @@
 import prisma from '../utils/prisma';
 
-export const getAllSacraments = async (filters?: {
+export const getAllSacraments = async (filters: {
     type?: string;
     memberId?: number;
-}) => {
-    return prisma.sacrament.findMany({
-        where: {
-            type: filters?.type,
-            memberId: filters?.memberId,
-        },
-        include: {
-            member: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
+    page?: number;
+    limit?: number;
+    search?: string;
+} = {}) => {
+    const page = filters.page || 1;
+    const limit = filters.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (filters.type) where.type = filters.type;
+    if (filters.memberId) where.memberId = filters.memberId;
+    if (filters.search) {
+        where.member = {
+            name: {
+                contains: filters.search,
+            },
+        };
+    }
+
+    const [data, total] = await Promise.all([
+        prisma.sacrament.findMany({
+            where,
+            include: {
+                member: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    },
                 },
             },
+            orderBy: { date: 'desc' },
+            skip,
+            take: limit,
+        }),
+        prisma.sacrament.count({ where }),
+    ]);
+
+    return {
+        data,
+        meta: {
+            total,
+            page,
+            limit,
+            pages: Math.ceil(total / limit),
         },
-        orderBy: { date: 'desc' },
-    });
+    };
 };
 
 export const getSacramentsByMember = async (memberId: number) => {

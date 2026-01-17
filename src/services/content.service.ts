@@ -39,11 +39,30 @@ export const createContent = async (type: string, title: string, body?: string, 
     });
 };
 
-export const getContentByType = async (type: string) => {
-    return prisma.content.findMany({
-        where: { type },
-        orderBy: { date: 'desc' },
-    });
+export const getContentByType = async (type: string, page: number = 1, limit: number = 20) => {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+        prisma.content.findMany({
+            where: { type },
+            orderBy: { date: 'desc' },
+            skip,
+            take: limit,
+        }),
+        prisma.content.count({
+            where: { type },
+        }),
+    ]);
+
+    return {
+        data,
+        meta: {
+            total,
+            page,
+            limit,
+            pages: Math.ceil(total / limit),
+        },
+    };
 };
 
 export const updateContent = async (id: number, title: string, body?: string, mediaUrl?: string) => {

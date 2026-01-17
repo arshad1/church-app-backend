@@ -4,10 +4,16 @@ import { ministriesAPI, membersAPI } from '../services/api';
 
 interface Member {
     id: number;
-    name?: string;
+    name: string;
     email: string;
     profileImage?: string;
-    ministryRole?: 'LEADER' | 'MEMBER';
+    phone?: string;
+}
+
+interface MinistryMember {
+    id: number;
+    role: 'LEADER' | 'MEMBER';
+    member: Member;
 }
 
 interface Ministry {
@@ -15,7 +21,7 @@ interface Ministry {
     name: string;
     description?: string;
     meetingSchedule?: string;
-    members?: Member[];
+    members?: MinistryMember[];
     createdAt: string;
 }
 
@@ -93,7 +99,7 @@ export default function MinistryDetails() {
         try {
             const res = await membersAPI.getAll({ limit: 50, search: term });
             // Filter out existing members
-            const currentMemberIds = ministry?.members?.map(m => m.id) || [];
+            const currentMemberIds = ministry?.members?.map(m => m.member.id) || [];
             const membersList = res.data.data || res.data;
             const available = membersList.filter((m: any) => !currentMemberIds.includes(m.id));
             setFilteredMembers(available);
@@ -178,7 +184,7 @@ export default function MinistryDetails() {
                         </div>
                         <div>
                             <h1 className="text-xl font-black text-gray-900 leading-tight">{ministry.name}</h1>
-                            <p className="text-sm text-gray-500">Created {new Date(ministry.createdAt).toLocaleDateString()}</p>
+                            <p className="text-sm text-gray-500">Created {ministry.createdAt ? new Date(ministry.createdAt).toLocaleDateString() : 'N/A'}</p>
                         </div>
                     </div>
 
@@ -232,40 +238,40 @@ export default function MinistryDetails() {
                                 No members in this ministry yet.
                             </div>
                         ) : (
-                            ministry.members.map((member) => (
-                                <div key={member.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group">
+                            ministry.members.map((mm) => (
+                                <div key={mm.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-100 shrink-0">
-                                            {member.profileImage ? (
-                                                <img src={member.profileImage} alt={member.name} className="w-full h-full object-cover" />
+                                            {mm.member.profileImage ? (
+                                                <img src={mm.member.profileImage} alt={mm.member.name} className="w-full h-full object-cover" />
                                             ) : (
-                                                <span className="text-gray-500 font-bold">{member.name?.[0]}</span>
+                                                <span className="text-gray-500 font-bold">{mm.member.name?.[0]}</span>
                                             )}
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-2">
-                                                <p className="font-bold text-gray-900">{member.name || member.email}</p>
-                                                {member.ministryRole === 'LEADER' && (
+                                                <p className="font-bold text-gray-900">{mm.member.name || mm.member.email}</p>
+                                                {mm.role === 'LEADER' && (
                                                     <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-100 text-yellow-800 uppercase tracking-wide">
                                                         Leader
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="text-xs text-gray-500">{member.email}</p>
+                                            <p className="text-xs text-gray-500">{mm.member.email}</p>
                                         </div>
                                     </div>
 
                                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        {member.ministryRole !== 'LEADER' && (
+                                        {mm.role !== 'LEADER' && (
                                             <button
-                                                onClick={() => handleAssignLeader(member.id)}
+                                                onClick={() => handleAssignLeader(mm.member.id)}
                                                 className="text-xs font-bold text-primary-700 hover:text-primary-900 px-2 py-1 rounded hover:bg-primary-50 transition-colors"
                                             >
                                                 Make Leader
                                             </button>
                                         )}
                                         <button
-                                            onClick={() => handleRemoveMember(member.id)}
+                                            onClick={() => handleRemoveMember(mm.member.id)}
                                             className="p-2 text-gray-400 hover:text-red-600 transition-colors"
                                             title="Remove from Ministry"
                                         >

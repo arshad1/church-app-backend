@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { contentAPI, uploadsAPI } from '../services/api';
+import { contentAPI, uploadsAPI, settingsAPI } from '../services/api';
 
 interface Verse {
     id: number;
@@ -25,19 +25,59 @@ export default function DailyVerses() {
         mediaUrl: ''
     });
 
+    // Pagination State
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(9); // 9 for grid layout (3x3)
+    const [total, setTotal] = useState(0);
+
+    // Settings State
+    const [showRandomVerse, setShowRandomVerse] = useState(false);
+
     // Upload State
     const [uploading, setUploading] = useState(false);
+    const [saving, setSaving] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         loadVerses();
+    }, [page, limit]);
+
+    useEffect(() => {
+        loadSettings();
     }, []);
+
+    const loadSettings = async () => {
+        try {
+            const res = await settingsAPI.get();
+            setShowRandomVerse(res.data.showRandomVerse);
+        } catch (error) {
+            console.error('Error loading settings:', error);
+        }
+    };
+
+    const toggleRandomVerse = async () => {
+        try {
+            const newValue = !showRandomVerse;
+            await settingsAPI.update({ showRandomVerse: newValue });
+            setShowRandomVerse(newValue);
+        } catch (error) {
+            console.error('Error updating settings:', error);
+            alert('Failed to update settings');
+        }
+    };
 
     const loadVerses = async () => {
         try {
             setLoading(true);
-            const res = await contentAPI.getAll('BIBLE_VERSE');
-            setVerses(res.data);
+            const res = await contentAPI.getAll('BIBLE_VERSE', { page, limit });
+            // Handle both old array format (fallback) and new paginated format
+            if (res.data.data) {
+                setVerses(res.data.data);
+                setTotal(res.data.meta.total);
+            } else {
+                setVerses(res.data);
+                setTotal(res.data.length);
+            }
         } catch (error) {
             console.error('Error loading verses:', error);
             // Handle error (e.g., toast)
@@ -94,25 +134,27 @@ export default function DailyVerses() {
         }
 
         try {
+            setSaving(true);
             if (editingId) {
                 await contentAPI.update(editingId, {
                     type: 'BIBLE_VERSE',
                     ...formData
                 });
-                setShowModal(false);
-                setEditingId(null);
-                setFormData({ title: '', body: '', mediaUrl: '' });
             } else {
                 await contentAPI.create({
                     type: 'BIBLE_VERSE',
                     ...formData
                 });
-                // Keep modal open for multiple adds
             }
+            setShowModal(false);
+            setEditingId(null);
+            setFormData({ title: '', body: '', mediaUrl: '' });
             loadVerses(); // Refresh list after edit or create
         } catch (error) {
             console.error('Error saving verse:', error);
             alert('Failed to save verse');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -124,21 +166,35 @@ export default function DailyVerses() {
 
     return (
         <div className="p-8">
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Daily Verses</h1>
                     <p className="text-gray-500 mt-1">Manage Verse of the Day content</p>
                 </div>
-                <button
-                    onClick={() => {
-                        setEditingId(null);
-                        setFormData({ title: '', body: '', mediaUrl: '' });
-                        setShowModal(true);
-                    }}
-                    className="px-4 py-2 bg-primary-800 text-white font-bold rounded-xl hover:bg-primary-900 transition-colors shadow-lg shadow-primary-900/20"
-                >
-                    + New Verse
-                </button>
+
+                <div className="flex items-center gap-4">
+                    {/* Settings Toggle */}
+                    <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-xl border border-gray-200">
+                        <span className="text-sm font-bold text-gray-600">Mobile: Random Verse</span>
+                        <button
+                            onClick={toggleRandomVerse}
+                            className={`w-12 h-6 rounded-full transition-colors relative ${showRandomVerse ? 'bg-primary-600' : 'bg-gray-300'}`}
+                        >
+                            <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${showRandomVerse ? 'left-7' : 'left-1'}`} />
+                        </button>
+                    </div>
+
+                    <button
+                        onClick={() => {
+                            setEditingId(null);
+                            setFormData({ title: '', body: '', mediaUrl: '' });
+                            setShowModal(true);
+                        }}
+                        className="px-4 py-2 bg-primary-800 text-white font-bold rounded-xl hover:bg-primary-900 transition-colors shadow-lg shadow-primary-900/20"
+                    >
+                        + New Verse
+                    </button>
+                </div>
             </div>
 
             {loading ? (
@@ -208,6 +264,56 @@ export default function DailyVerses() {
                 </div>
             )}
 
+            {/* Pagination */}
+            {!loading && total > 0 && (
+                <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-6">
+                    <span className="text-sm text-gray-500">
+                        Showing <span className="font-bold text-gray-900">{(page - 1) * limit + 1}</span> to <span className="font-bold text-gray-900">{Math.min(page * limit, total)}</span> of <span className="font-bold text-gray-900">{total}</span> verses
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setPage(page - 1)}
+                            disabled={page === 1}
+                            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <div className="flex items-center gap-1">
+                            {[...Array(Math.min(5, Math.ceil(total / limit)))].map((_, i) => {
+                                // Simple logic to show first 5 pages or so. Better implementation needed for many pages.
+                                // For now, just showing page numbers 1-5 or less.
+                                let pageNum = i + 1;
+                                if (page > 3 && Math.ceil(total / limit) > 5) {
+                                    pageNum = page - 2 + i;
+                                    if (pageNum > Math.ceil(total / limit)) return null;
+                                }
+
+                                return (
+                                    <button
+                                        key={pageNum}
+                                        onClick={() => setPage(pageNum)}
+                                        className={`w-8 h-8 rounded-lg text-sm font-bold transition-all ${page === pageNum ? 'bg-primary-600 text-white shadow-md' : 'hover:bg-gray-100 text-gray-600'}`}
+                                    >
+                                        {pageNum}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <button
+                            onClick={() => setPage(page + 1)}
+                            disabled={page >= Math.ceil(total / limit)}
+                            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Modal */}
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -272,7 +378,13 @@ export default function DailyVerses() {
 
                             <div className="flex justify-end gap-2 pt-4">
                                 <button onClick={handleCloseModal} className="px-4 py-2 text-gray-500 font-bold">Cancel</button>
-                                <button onClick={handleSubmit} className="px-4 py-2 bg-primary-800 text-white font-bold rounded-xl">{editingId ? 'Update Verse' : 'Save Verse'}</button>
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={saving || uploading}
+                                    className="px-4 py-2 bg-primary-800 text-white font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {saving ? 'Saving...' : (editingId ? 'Update Verse' : 'Save Verse')}
+                                </button>
                             </div>
                         </div>
                     </div>
