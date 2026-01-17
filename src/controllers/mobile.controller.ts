@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import * as userService from '../services/user.service';
 import * as memberService from '../services/member.service';
 import * as familyService from '../services/family.service';
+import * as settingsService from '../services/settings.service';
 
 /**
  * Get the current user's deep profile including Family and Member details.
@@ -61,6 +62,18 @@ export const updateMyProfile = async (req: Request, res: Response) => {
         const { password, ...userWithoutPassword } = user;
 
         res.json(userWithoutPassword);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+/**
+ * Get church settings (Public/Mobile).
+ */
+export const getSettings = async (req: Request, res: Response) => {
+    try {
+        const settings = await settingsService.getSettings();
+        res.json(settings);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

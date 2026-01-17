@@ -147,6 +147,24 @@
                 }
             }
         },
+        "/mobile/settings": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Get church settings (Mobile)",
+                "tags": [
+                    "Mobile"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Church settings including name, logo, etc."
+                    }
+                }
+            }
+        },
         "/mobile/profile": {
             "get": {
                 "security": [
@@ -161,6 +179,36 @@
                 "responses": {
                     "200": {
                         "description": "User profile including family and member details"
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Update current user profile (email)",
+                "tags": [
+                    "Mobile"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User profile updated"
                     }
                 }
             }

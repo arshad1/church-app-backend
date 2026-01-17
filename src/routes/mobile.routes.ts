@@ -7,6 +7,9 @@ import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
 
+// Public routes
+router.get('/settings', mobileController.getSettings);
+
 // All mobile routes require authentication
 router.use(authenticate);
 
