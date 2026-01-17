@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import * as sacramentService from '../services/sacrament.service';
+import * as userService from '../services/user.service';
+import * as memberService from '../services/member.service';
+import * as notificationService from '../services/notification.service';
 
 export const getAllSacraments = async (req: Request, res: Response) => {
     try {
@@ -43,6 +46,30 @@ export const createSacrament = async (req: Request, res: Response) => {
             memberId,
             details,
         });
+
+        // Notify Family Head(s)
+        const familyId = sacrament.member?.familyId;
+        if (familyId) {
+            const familyMembers = await memberService.getMembersByFamily(familyId);
+            const heads = familyMembers.filter(m => m.headOfFamily);
+
+            for (const head of heads) {
+                const user = await userService.getUserByMemberId(head.id);
+                if (user) {
+                    const title = 'New Sacrament Recorded';
+                    const body = `A new ${type} record has been added for ${sacrament.member.name}.`;
+
+                    await notificationService.createNotification(
+                        user.id,
+                        title,
+                        body,
+                        'SACRAMENT',
+                        JSON.stringify({ memberId: sacrament.memberId, type: 'SACRAMENT' })
+                    );
+                }
+            }
+        }
+
         res.status(201).json(sacrament);
     } catch (error: any) {
         res.status(400).json({ message: error.message });

@@ -109,6 +109,12 @@ export const deleteManyUsers = async (userIds: number[]) => {
     });
 };
 
+export const getUserByMemberId = async (memberId: number) => {
+    return prisma.user.findFirst({
+        where: { memberId }
+    });
+};
+
 export const createUser = async (data: { username?: string; email?: string; password: string; role: string; memberId?: number }) => {
     return prisma.user.create({
         data: data as any

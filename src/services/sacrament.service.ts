@@ -74,6 +74,7 @@ export const createSacrament = async (data: {
                     id: true,
                     name: true,
                     email: true,
+                    familyId: true
                 },
             },
         },
