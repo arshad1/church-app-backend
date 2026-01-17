@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import HouseList from '../components/family/HouseList';
+import FamilyTree from '../components/family/FamilyTree';
 import AddHouseModal from '../components/family/AddHouseModal';
 import AddMemberModal from '../components/family/AddMemberModal';
 import { familiesAPI } from '../services/api';
@@ -162,9 +163,7 @@ export default function FamilyDetails() {
                         </div>
                         <div>
                             <h1 className="text-xl font-black text-gray-900 leading-tight">{family.name}</h1>
-                            {family.houseName && (
-                                <p className="text-sm font-bold text-primary-700">{family.houseName}</p>
-                            )}
+
                             <p className="text-sm text-gray-500">Created {new Date(family.createdAt).toLocaleDateString()}</p>
                         </div>
                     </div>
@@ -265,10 +264,7 @@ export default function FamilyDetails() {
                     )}
 
                     {viewMode === 'tree' && (
-                        // Placeholder for Tree View - can be enhanced later or componentized
-                        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 min-h-[400px] flex items-center justify-center">
-                            <p className="text-gray-400">Tree view not yet refactored. (See previous impl)</p>
-                        </div>
+                        <FamilyTree family={family} unassignedMembers={unassignedMembers} />
                     )}
                 </div>
             </div>
