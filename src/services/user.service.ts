@@ -10,7 +10,7 @@ export const getUserById = async (userId: number) => {
                     family: {
                         include: {
                             members: {
-                                select: { id: true, name: true, familyRole: true, profileImage: true }
+                                select: { id: true, name: true, familyRole: true, profileImage: true, dob: true, gender: true }
                             }
                         }
                     },

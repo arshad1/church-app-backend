@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   base: '/admin/',
   server: {
+    host: true, // Expose to network
     proxy: {
       '/api': {
         target: 'http://localhost:3000',

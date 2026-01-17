@@ -43,7 +43,7 @@ export const getMemberById = async (id: number) => {
             family: {
                 include: {
                     members: {
-                        select: { id: true, name: true, email: true, familyRole: true, profileImage: true },
+                        select: { id: true, name: true, email: true, familyRole: true, profileImage: true, dob: true, gender: true },
                     },
                 },
             },
@@ -73,6 +73,8 @@ export const createMember = async (data: {
     status?: string;
     familyId?: number;
     familyRole?: string;
+    dob?: Date;
+    gender?: string;
 }) => {
     return prisma.member.create({
         data,
