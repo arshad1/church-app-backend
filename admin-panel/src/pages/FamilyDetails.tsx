@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import HouseList from '../components/family/HouseList';
-import FamilyTree from '../components/family/FamilyTree';
+import FamilyTreeD3 from '../components/family/FamilyTreeD3';
 import AddHouseModal from '../components/family/AddHouseModal';
 import AddMemberModal from '../components/family/AddMemberModal';
 import { familiesAPI } from '../services/api';
@@ -264,7 +264,7 @@ export default function FamilyDetails() {
                     )}
 
                     {viewMode === 'tree' && (
-                        <FamilyTree family={family} unassignedMembers={unassignedMembers} />
+                        <FamilyTreeD3 family={family} unassignedMembers={unassignedMembers} />
                     )}
                 </div>
             </div>
