@@ -80,12 +80,12 @@ export const ministriesAPI = {
 
 // Admin - Events
 export const eventsAPI = {
-    getAll: () => api.get('/events'),
-    getById: (id: number) => api.get(`/events/${id}`),
-    create: (data: any) => api.post('/events', data),
-    update: (id: number, data: any) => api.put(`/events/${id}`, data),
-    delete: (id: number) => api.delete(`/events/${id}`),
-    publish: (id: number) => api.post(`/events/${id}/publish`),
+    getAll: () => api.get('/admin/events'),
+    getById: (id: number) => api.get(`/admin/events/${id}`),
+    create: (data: any) => api.post('/admin/events', data),
+    update: (id: number, data: any) => api.put(`/admin/events/${id}`, data),
+    delete: (id: number) => api.delete(`/admin/events/${id}`),
+    publish: (id: number) => api.post(`/admin/events/${id}/publish`),
 };
 
 // Admin - Sacraments
@@ -172,6 +172,14 @@ export const usersAPI = {
     update: (id: number, data: any) => api.put(`/users/${id}`, data),
     delete: (id: number) => api.delete(`/users/${id}`),
     deleteBulk: (userIds: number[]) => api.post('/users/delete-bulk', { userIds }),
+};
+
+export const contentAPI = {
+    // Generic Content (e.g., BIBLE_VERSE)
+    getAll: (type: string) => api.get(`/admin/content/${type}`),
+    create: (data: any) => api.post('/admin/content', data),
+    update: (id: number, data: any) => api.put(`/admin/content/${id}`, data),
+    delete: (id: number) => api.delete(`/admin/content/${id}`),
 };
 
 export default api;

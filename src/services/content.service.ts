@@ -15,7 +15,15 @@ export const createAnnouncement = async (userId: number, title: string, content:
 export const getAnnouncements = async () => {
     return prisma.announcement.findMany({
         orderBy: { createdAt: 'desc' },
-        include: { author: { select: { name: true } } },
+        include: {
+            author: {
+                include: {
+                    member: {
+                        select: { name: true },
+                    },
+                },
+            },
+        },
     });
 };
 
@@ -35,5 +43,22 @@ export const getContentByType = async (type: string) => {
     return prisma.content.findMany({
         where: { type },
         orderBy: { date: 'desc' },
+    });
+};
+
+export const updateContent = async (id: number, title: string, body?: string, mediaUrl?: string) => {
+    return prisma.content.update({
+        where: { id },
+        data: {
+            title,
+            body,
+            mediaUrl,
+        },
+    });
+};
+
+export const deleteContent = async (id: number) => {
+    return prisma.content.delete({
+        where: { id },
     });
 };
