@@ -15,6 +15,7 @@ router.get('/profile', mobileController.getMyProfile);
 router.post('/family/members', mobileController.addFamilyMember);
 router.put('/family/members/:memberId', mobileController.updateFamilyMember);
 router.delete('/family/members/:memberId', mobileController.deleteFamilyMember);
+router.put('/family', mobileController.updateMyFamily);
 
 // Directory
 router.get('/directory', mobileController.getDirectory);

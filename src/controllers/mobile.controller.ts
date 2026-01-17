@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as userService from '../services/user.service';
 import * as memberService from '../services/member.service';
+import * as familyService from '../services/family.service';
 
 /**
  * Get the current user's deep profile including Family and Member details.
@@ -178,6 +179,39 @@ export const deleteFamilyMember = async (req: Request, res: Response) => {
 
         res.json({ success: true, message: 'Family member removed successfully' });
 
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+/**
+ * Allow a user to update their own family details (Name, Address, Phone, House Name).
+ */
+export const updateMyFamily = async (req: Request, res: Response) => {
+    try {
+        const userId = (req.user as any).userId;
+        const user = await userService.getUserById(userId);
+
+        if (!user || !user.memberId) {
+            return res.status(400).json({ message: 'User profile not linked to a member' });
+        }
+
+        const member = await memberService.getMemberById(user.memberId);
+        if (!member || !member.familyId) {
+            return res.status(403).json({ message: 'You are not linked to a family' });
+        }
+
+        const { name, address, phone, houseName } = req.body;
+        const updateData: any = {};
+
+        if (name) updateData.name = name;
+        if (address) updateData.address = address;
+        if (phone) updateData.phone = phone;
+        if (houseName) updateData.houseName = houseName;
+
+        const updatedFamily = await familyService.updateFamily(member.familyId, updateData);
+
+        res.json({ success: true, message: 'Family details updated', family: updatedFamily });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
