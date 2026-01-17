@@ -3,7 +3,8 @@ import { usersAPI, membersAPI } from '../services/api';
 
 interface User {
     id: number;
-    email: string;
+    username?: string;
+    email?: string;
     role: string;
     memberId?: number;
     member?: {
@@ -30,6 +31,7 @@ export default function Users() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [formData, setFormData] = useState({
+        username: '',
         email: '',
         password: '',
         role: 'MEMBER',
@@ -103,7 +105,7 @@ export default function Users() {
 
             setIsModalOpen(false);
             setEditingUser(null);
-            setFormData({ email: '', password: '', role: 'MEMBER', memberId: '' });
+            setFormData({ username: '', email: '', password: '', role: 'MEMBER', memberId: '' });
             loadUsers();
         } catch (error: any) {
             alert(error.response?.data?.message || 'Error saving user');
@@ -113,7 +115,8 @@ export default function Users() {
     const openEditModal = (user: User) => {
         setEditingUser(user);
         setFormData({
-            email: user.email,
+            username: user.username || '',
+            email: user.email || '',
             password: '',
             role: user.role,
             memberId: user.memberId?.toString() || ''
@@ -146,8 +149,9 @@ export default function Users() {
 
     const filteredAndSortedUsers = useMemo(() => {
         let result = users.filter(user =>
-            user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.member?.name.toLowerCase().includes(searchTerm.toLowerCase())
+            (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (user.member?.name && user.member.name.toLowerCase().includes(searchTerm.toLowerCase()))
         );
 
         result.sort((a, b) => {
@@ -186,7 +190,7 @@ export default function Users() {
                 <button
                     onClick={() => {
                         setEditingUser(null);
-                        setFormData({ email: '', password: '', role: 'MEMBER', memberId: '' });
+                        setFormData({ username: '', email: '', password: '', role: 'MEMBER', memberId: '' });
                         setIsModalOpen(true);
                     }}
                     className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors font-medium shadow-sm"
@@ -281,7 +285,10 @@ export default function Users() {
                                                 className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                                             />
                                         </td>
-                                        <td className="px-6 py-4 font-medium text-gray-900">{user.email}</td>
+                                        <td className="px-6 py-4 font-medium text-gray-900">
+                                            {user.email || user.username}
+                                            {(!user.email && user.username) && <span className="ml-2 text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">ID</span>}
+                                        </td>
                                         <td className="px-6 py-4">
                                             {user.member ? (
                                                 <div className="flex items-center gap-2">
@@ -300,9 +307,9 @@ export default function Users() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2 py-1 rounded-full text-xs font-semibold ${user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' :
-                                                    user.role === 'PASTOR' ? 'bg-blue-100 text-blue-700' :
-                                                        user.role === 'STAFF' ? 'bg-green-100 text-green-700' :
-                                                            'bg-gray-100 text-gray-600'
+                                                user.role === 'PASTOR' ? 'bg-blue-100 text-blue-700' :
+                                                    user.role === 'STAFF' ? 'bg-green-100 text-green-700' :
+                                                        'bg-gray-100 text-gray-600'
                                                 }`}>
                                                 {user.role}
                                             </span>
@@ -355,16 +362,27 @@ export default function Users() {
                             </button>
                         </div>
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
-                                <input
-                                    type="email"
-                                    required
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
-                                    placeholder="user@example.com"
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1">Username (Optional)</label>
+                                    <input
+                                        type="text"
+                                        value={formData.username}
+                                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                                        placeholder="username"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1">Email (Optional)</label>
+                                    <input
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                                        placeholder="user@example.com"
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-1">

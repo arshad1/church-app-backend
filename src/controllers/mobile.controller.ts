@@ -9,7 +9,7 @@ import * as familyService from '../services/family.service';
 export const getMyProfile = async (req: Request, res: Response) => {
     try {
         const userId = (req.user as any).userId;
-        const user = await userService.getUserById(userId);
+        const user: any = await userService.getUserById(userId);
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -17,6 +17,13 @@ export const getMyProfile = async (req: Request, res: Response) => {
 
         // Exclude sensitive data
         const { password, ...userWithoutPassword } = user;
+
+        // Filter members by houseId if the user belongs to a house
+        if (user.member?.houseId && user.member.family?.members) {
+            user.member.family.members = user.member.family.members.filter(
+                (m: any) => m.houseId === user.member!.houseId
+            );
+        }
 
         res.json(userWithoutPassword);
     } catch (error: any) {

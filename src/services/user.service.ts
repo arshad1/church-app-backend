@@ -11,7 +11,7 @@ export const getUserById = async (userId: number) => {
                         include: {
                             members: {
                                 where: { status: 'ACTIVE' },
-                                select: { id: true, name: true, familyRole: true, profileImage: true, dob: true, gender: true, spouseId: true }
+                                select: { id: true, name: true, familyRole: true, profileImage: true, dob: true, gender: true, spouseId: true, houseId: true }
                             },
                             houses: true
                         }
@@ -86,9 +86,9 @@ export const deleteManyUsers = async (userIds: number[]) => {
     });
 };
 
-export const createUser = async (data: { email: string; password: string; role: string; memberId?: number }) => {
+export const createUser = async (data: { username?: string; email?: string; password: string; role: string; memberId?: number }) => {
     return prisma.user.create({
-        data
+        data: data as any
     });
 };
 

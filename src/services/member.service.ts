@@ -1,4 +1,39 @@
 import prisma from '../utils/prisma';
+import bcrypt from 'bcryptjs';
+
+const createAppUserForMember = async (member: any) => {
+    // Check if user already exists for this member
+    const existingUser = await prisma.user.findFirst({
+        where: { memberId: member.id }
+    });
+
+    if (existingUser) return;
+
+    // determine unique username
+    // if email exists, use email. If not, use member ID.
+    let username = member.email;
+    if (!username) {
+        username = member.id.toString();
+    }
+
+    // Default password
+    const hashedPassword = await bcrypt.hash('welcome123', 10);
+
+    try {
+        await prisma.user.create({
+            data: {
+                username: username,
+                email: member.email || null,
+                password: hashedPassword,
+                memberId: member.id,
+                role: 'MEMBER'
+            }
+        });
+    } catch (error) {
+        console.error("Auto-creation of user failed", error);
+        // checking if failure is due to email/username conflict
+    }
+};
 
 export const getAllMembers = async (filters?: {
     status?: string;
@@ -77,10 +112,17 @@ export const createMember = async (data: {
     gender?: string;
     houseId?: number;
     spouseId?: number;
+    headOfFamily?: boolean;
 }) => {
-    return prisma.member.create({
+    const member = await prisma.member.create({
         data,
     });
+
+    if (member.headOfFamily || member.familyRole === 'HEAD') {
+        await createAppUserForMember(member);
+    }
+
+    return member;
 };
 
 export const updateMember = async (id: number, data: any) => {
@@ -120,10 +162,14 @@ export const setHeadOfFamily = async (memberId: number, familyId: number) => {
     });
 
     // Then set the new head
-    return prisma.member.update({
+    const member = await prisma.member.update({
         where: { id: memberId },
         data: { headOfFamily: true },
     });
+
+    await createAppUserForMember(member);
+
+    return member;
 };
 
 export const getMembersByFamily = async (familyId: number) => {

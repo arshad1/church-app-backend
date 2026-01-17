@@ -65,13 +65,14 @@ export const bulkDeleteUsers = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
     try {
-        const { email, password, role, memberId } = req.body;
-        if (!email || !password) {
-            return res.status(400).json({ message: 'Email and password are required' });
+        const { email, password, role, memberId, username } = req.body;
+        if ((!email && !username) || !password) {
+            return res.status(400).json({ message: 'Email/Username and password are required' });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await userService.createUser({
+            username,
             email,
             password: hashedPassword,
             role: role || 'MEMBER',
