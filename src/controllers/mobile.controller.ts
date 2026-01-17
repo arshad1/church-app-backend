@@ -25,6 +25,41 @@ export const getMyProfile = async (req: Request, res: Response) => {
             );
         }
 
+        // Handle case where user has no family (standalone member)
+        // Inject a virtual family structure so the mobile app doesn't break
+        if (user.member && !user.member.family) {
+            user.member.family.members = [];
+        }
+
+        res.json(userWithoutPassword);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+/**
+ * Update the current user's profile (e.g. Email).
+ */
+export const updateMyProfile = async (req: Request, res: Response) => {
+    try {
+        const userId = (req.user as any).userId;
+        const { email } = req.body;
+        const updateData: any = {};
+
+        if (email) {
+            updateData.email = email;
+        }
+
+        if (Object.keys(updateData).length > 0) {
+            await userService.updateUser(userId, updateData);
+        }
+
+        // Return updated profile
+        const user: any = await userService.getUserById(userId);
+
+        // Exclude sensitive data
+        const { password, ...userWithoutPassword } = user;
+
         res.json(userWithoutPassword);
     } catch (error: any) {
         res.status(500).json({ message: error.message });

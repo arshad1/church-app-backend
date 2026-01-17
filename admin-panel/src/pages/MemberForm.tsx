@@ -61,7 +61,7 @@ export default function MemberForm() {
     const loadFamilies = async () => {
         try {
             const res = await familiesAPI.getAll();
-            setFamilies(res.data);
+            setFamilies(res.data.data);
         } catch (error) {
             console.error('Error loading families:', error);
         }

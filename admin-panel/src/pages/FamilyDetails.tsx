@@ -83,13 +83,11 @@ export default function FamilyDetails() {
 
     const searchFamilies = async (term: string) => {
         try {
-            const res = await familiesAPI.getAll();
-            const allFamilies = res.data;
+            const res = await familiesAPI.getAll({ search: term, limit: 50 });
+            const allFamilies = res.data.data;
             const filtered = allFamilies.filter((f: Family) =>
                 f.id !== Number(id) &&
-                !family?.relatedFamilies?.some(rf => rf.id === f.id) &&
-                (f.name.toLowerCase().includes(term.toLowerCase()) ||
-                    f.houseName?.toLowerCase().includes(term.toLowerCase()))
+                !family?.relatedFamilies?.some(rf => rf.id === f.id)
             );
             setSearchedFamilies(filtered);
         } catch (error) {
