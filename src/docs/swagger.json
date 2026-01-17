@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "http://localhost:3000/api"
+            "url": "http://127.0.0.1:3000/api"
         }
     ],
     "components": {
@@ -143,6 +143,389 @@
                 "responses": {
                     "200": {
                         "description": "List of announcements"
+                    }
+                }
+            }
+        },
+        "/mobile/profile": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Get current user profile (Mobile)",
+                "tags": [
+                    "Mobile"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User profile including family and member details"
+                    }
+                }
+            }
+        },
+        "/mobile/family/members": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Add a family member",
+                "tags": [
+                    "Mobile"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "name",
+                                    "familyRole"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "familyRole": {
+                                        "type": "string",
+                                        "enum": [
+                                            "HEAD",
+                                            "SPOUSE",
+                                            "CHILD",
+                                            "PARENT",
+                                            "SIBLING",
+                                            "OTHER"
+                                        ]
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "dob": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "gender": {
+                                        "type": "string",
+                                        "enum": [
+                                            "MALE",
+                                            "FEMALE",
+                                            "OTHER"
+                                        ]
+                                    },
+                                    "houseName": {
+                                        "type": "string"
+                                    },
+                                    "houseId": {
+                                        "type": "integer"
+                                    },
+                                    "spouseId": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Member created"
+                    }
+                }
+            }
+        },
+        "/mobile/family/members/{memberId}": {
+            "put": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Update a family member",
+                "tags": [
+                    "Mobile"
+                ],
+                "parameters": [
+                    {
+                        "name": "memberId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "dob": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "gender": {
+                                        "type": "string"
+                                    },
+                                    "relationship": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Member updated"
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Delete a family member",
+                "tags": [
+                    "Mobile"
+                ],
+                "parameters": [
+                    {
+                        "name": "memberId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Member deleted"
+                    }
+                }
+            }
+        },
+        "/mobile/family": {
+            "put": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Update family details",
+                "tags": [
+                    "Mobile"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "address": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "houseName": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Family updated"
+                    }
+                }
+            }
+        },
+        "/mobile/directory": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Get member directory",
+                "tags": [
+                    "Mobile"
+                ],
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of active members"
+                    }
+                }
+            }
+        },
+        "/mobile/announcements": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Get announcements",
+                "tags": [
+                    "Mobile"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of announcements"
+                    }
+                }
+            }
+        },
+        "/mobile/content/{type}": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Get content by type",
+                "tags": [
+                    "Mobile"
+                ],
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "DEVOTION",
+                                "BIBLE_VERSE",
+                                "GALLERY"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Content list"
+                    }
+                }
+            }
+        },
+        "/mobile/events": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Get mobile events",
+                "tags": [
+                    "Mobile"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of events"
+                    }
+                }
+            }
+        },
+        "/mobile/gallery/categories": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Get gallery categories",
+                "tags": [
+                    "Mobile"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of categories"
+                    }
+                }
+            }
+        },
+        "/mobile/gallery/albums": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Get gallery albums",
+                "tags": [
+                    "Mobile"
+                ],
+                "parameters": [
+                    {
+                        "name": "categoryId",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of albums"
+                    }
+                }
+            }
+        },
+        "/mobile/gallery/albums/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Get album details",
+                "tags": [
+                    "Mobile"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Album details including images"
                     }
                 }
             }
