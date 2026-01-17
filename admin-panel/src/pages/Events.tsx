@@ -125,7 +125,7 @@ export default function Events() {
         : view === 'LIVE' ? events.filter(e => e.isLive) : events.filter(e => e.isFeatured);
 
     return (
-        <div>
+        <div className="p-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>

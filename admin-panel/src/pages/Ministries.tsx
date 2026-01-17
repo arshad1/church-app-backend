@@ -52,7 +52,7 @@ export default function Ministries() {
     };
 
     return (
-        <div>
+        <div className="p-6">
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900">Ministries</h2>

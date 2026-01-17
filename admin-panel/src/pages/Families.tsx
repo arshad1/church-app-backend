@@ -41,7 +41,7 @@ export default function Families() {
     );
 
     return (
-        <div>
+        <div className="p-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
