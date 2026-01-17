@@ -1,13 +1,19 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { useState } from 'react';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
     const navigate = useNavigate();
+    const location = useLocation();
     const { logout, user } = useAuth();
     const { settings } = useSettings();
     const [mobileOpen, setMobileOpen] = useState(false);
+
+    const isPathActive = (path: string) => {
+        if (path === '/') return location.pathname === '/';
+        return location.pathname.startsWith(path);
+    };
 
     const menuItems = [
         {
@@ -113,19 +119,25 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         </div>
                         <div className="p-4">
                             <nav className="space-y-1">
-                                {menuItems.map((item) => (
-                                    <button
-                                        key={item.text}
-                                        onClick={() => {
-                                            navigate(item.path);
-                                            setMobileOpen(false);
-                                        }}
-                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors text-white/80 hover:text-white"
-                                    >
-                                        <div className="text-accent-400">{item.icon}</div>
-                                        <span className="font-medium">{item.text}</span>
-                                    </button>
-                                ))}
+                                {menuItems.map((item) => {
+                                    const active = isPathActive(item.path);
+                                    return (
+                                        <button
+                                            key={item.text}
+                                            onClick={() => {
+                                                navigate(item.path);
+                                                setMobileOpen(false);
+                                            }}
+                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active
+                                                ? 'bg-white/20 text-white shadow-lg'
+                                                : 'hover:bg-white/10 text-white/80 hover:text-white'
+                                                }`}
+                                        >
+                                            <div className={`${active ? 'text-white' : 'text-accent-400'}`}>{item.icon}</div>
+                                            <span className="font-medium">{item.text}</span>
+                                        </button>
+                                    );
+                                })}
                             </nav>
                         </div>
                     </div>
@@ -149,18 +161,24 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     </h2>
                 </div>
                 <nav className="flex-1 px-4 py-6 space-y-1">
-                    {menuItems.map((item) => (
-                        <button
-                            key={item.text}
-                            onClick={() => navigate(item.path)}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-colors text-white/80 hover:text-white group"
-                        >
-                            <div className="text-accent-400 group-hover:scale-110 transition-transform">
-                                {item.icon}
-                            </div>
-                            <span className="font-medium">{item.text}</span>
-                        </button>
-                    ))}
+                    {menuItems.map((item) => {
+                        const active = isPathActive(item.path);
+                        return (
+                            <button
+                                key={item.text}
+                                onClick={() => navigate(item.path)}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${active
+                                    ? 'bg-white/20 text-white shadow-lg shadow-black/20'
+                                    : 'hover:bg-white/10 text-white/80 hover:text-white'
+                                    }`}
+                            >
+                                <div className={`${active ? 'text-white' : 'text-accent-400'} group-hover:scale-110 transition-transform`}>
+                                    {item.icon}
+                                </div>
+                                <span className="font-medium">{item.text}</span>
+                            </button>
+                        );
+                    })}
                 </nav>
                 <div className="p-6 border-t border-white/5 bg-black/10">
                     <p className="text-xs text-white/40 text-center uppercase tracking-widest font-bold">
@@ -197,14 +215,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center text-white font-bold shadow-lg shadow-primary-900/10 border border-primary-500/20">
                                 {user?.name?.[0] || user?.email?.[0]}
                             </div>
-                            {/* <div className="hidden sm:block">
-                                <p className="text-sm font-semibold text-gray-900">
-                                    {user?.name || user?.email}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                    {user?.role}
-                                </p>
-                            </div> */}
                             <button
                                 onClick={logout}
                                 className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
