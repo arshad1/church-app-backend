@@ -174,6 +174,15 @@ export const usersAPI = {
     deleteBulk: (userIds: number[]) => api.post('/users/delete-bulk', { userIds }),
 };
 
+export const housesAPI = {
+    create: (data: { name: string; familyId: number; headMemberId?: number; headMemberData?: any }) =>
+        api.post('/admin/houses', data),
+    getByFamily: (familyId: number) => api.get(`/admin/houses/family/${familyId}`),
+    getById: (id: number) => api.get(`/admin/houses/${id}`),
+    update: (id: number, data: { name: string }) => api.put(`/admin/houses/${id}`, data),
+    delete: (id: number) => api.delete(`/admin/houses/${id}`),
+};
+
 export const contentAPI = {
     // Generic Content (e.g., BIBLE_VERSE)
     getAll: (type: string) => api.get(`/admin/content/${type}`),

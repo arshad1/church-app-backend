@@ -45,6 +45,8 @@ export const getDirectory = async (req: Request, res: Response) => {
     }
 };
 
+import * as houseService from '../services/house.service';
+
 /**
  * Allow a user to add a member to their family.
  * Validates that the user has a member profile and a family.
@@ -63,7 +65,44 @@ export const addFamilyMember = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'You are not linked to a family' });
         }
 
-        const { name, familyRole, phone, email, dob, gender } = req.body;
+        const { name, familyRole, phone, email, dob, gender, houseName, houseId } = req.body;
+
+        let targetHouseId = houseId;
+
+        // Validation for House logic
+        if (familyRole === 'HEAD') {
+            if (!houseName) {
+                return res.status(400).json({ message: 'House Name is required when adding a Family Head' });
+            }
+            // Create a new House for this Head
+            const newHouse = await houseService.createHouse({
+                name: houseName,
+                familyId: member.familyId
+            });
+            targetHouseId = newHouse.id;
+        } else {
+            // If not HEAD, must be assigned to a House
+            // If houseId is provided, use it.
+            // If not, default to the current user's house (if they have one)
+            if (!targetHouseId) {
+                if (member.houseId) {
+                    targetHouseId = member.houseId;
+                } else {
+                    // Fallback: If the family has only one house, assign to it?
+                    // Or require houseId if multiple houses exist?
+                    // For simplicity, let's try to find a default house or error
+                    const houses = await houseService.getHousesByFamily(member.familyId);
+                    if (houses.length === 1) {
+                        targetHouseId = houses[0].id;
+                    } else if (houses.length > 1) {
+                        return res.status(400).json({ message: 'Multiple houses found. Please specify a House ID.' });
+                    }
+                    // If 0 houses, and not adding a HEAD, this is an issue.
+                    // But maybe we assume legacy families might not have houses yet.
+                    // We can proceed without houseId in that case (as schema allows nullable)
+                }
+            }
+        }
 
         const newMember = await memberService.createMember({
             name,
@@ -73,8 +112,20 @@ export const addFamilyMember = async (req: Request, res: Response) => {
             familyId: member.familyId,
             status: 'ACTIVE', // Or PENDING if approval needed
             dob: dob ? new Date(dob) : undefined,
-            gender
+            gender,
+            houseId: targetHouseId
         });
+
+        // If the new member is a HEAD, we should probably mark them as headOfFamily=true?
+        // But the schema implies headOfFamily is per Member, and House implies grouping.
+        // We can set headOfFamily flag for the member if role is HEAD
+        if (familyRole === 'HEAD') {
+            // Note: This service function might need to be updated to support house-level head vs family-level head?
+            // The current schema has `headOfFamily` boolean on Member.
+            // If we have multiple houses, we might have multiple heads (one per house).
+            // So we can set `headOfFamily: true` for them.
+            await memberService.updateMember(newMember.id, { headOfFamily: true });
+        }
 
         res.status(201).json(newMember);
 

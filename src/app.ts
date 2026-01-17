@@ -19,6 +19,7 @@ import settingsRoutes from './routes/settings.routes';
 import galleryRoutes from './routes/gallery.routes';
 import mobileRoutes from './routes/mobile.routes';
 import notificationRoutes from './routes/notification.routes';
+import houseRoutes from './routes/house.routes';
 import swaggerUi from 'swagger-ui-express';
 import * as swaggerDocument from './docs/swagger.json';
 
@@ -51,6 +52,7 @@ app.use('/api/admin/prayers', prayerRoutes);
 app.use('/api/admin/reports', reportRoutes);
 app.use('/api/admin/settings', settingsRoutes);
 app.use('/api/admin/gallery', galleryRoutes);
+app.use('/api/admin/houses', houseRoutes);
 
 // Mobile API Routes
 app.use('/api/mobile', mobileRoutes);

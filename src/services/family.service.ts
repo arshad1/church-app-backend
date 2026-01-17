@@ -24,7 +24,25 @@ export const getFamilyById = async (id: number) => {
     const family = await prisma.family.findUnique({
         where: { id },
         include: {
-            members: {
+            houses: {
+                include: {
+                    members: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            phone: true,
+                            profileImage: true,
+                            familyRole: true,
+                            status: true,
+                            headOfFamily: true,
+                            sacraments: true,
+                        },
+                    },
+                },
+            },
+            members: { // Keep for legacy or unassigned members
+                where: { houseId: null }, // Only get members NOT in a house (or remove where if we want all)
                 select: {
                     id: true,
                     name: true,

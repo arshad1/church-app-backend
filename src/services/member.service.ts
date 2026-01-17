@@ -75,6 +75,7 @@ export const createMember = async (data: {
     familyRole?: string;
     dob?: Date;
     gender?: string;
+    houseId?: number;
 }) => {
     return prisma.member.create({
         data,

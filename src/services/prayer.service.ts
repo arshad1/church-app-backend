@@ -8,7 +8,7 @@ export const getAllPrayerRequests = async (filters?: {
             status: filters?.status,
         },
         include: {
-            user: {
+            member: {
                 select: {
                     id: true,
                     name: true,

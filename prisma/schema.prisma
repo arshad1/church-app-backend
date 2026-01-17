@@ -57,6 +57,9 @@ model Member {
   familyId    Int?
   family      Family?      @relation(fields: [familyId], references: [id])
   
+  houseId     Int?
+  house       House?       @relation(fields: [houseId], references: [id])
+  
   user        User?
 
   sacraments  Sacrament[]
@@ -72,11 +75,23 @@ model Family {
   phone     String?
   createdAt DateTime @default(now())
   members   Member[]
-  houseName String?
+  houseName String? // Legacy field, can be removed later if fully migrated to House model
+  
+  houses    House[]
   
   // Self-relation for related families
   relatedTo Family[] @relation("FamilyRelations")
   relatedBy Family[] @relation("FamilyRelations")
+}
+
+model House {
+  id        Int      @id @default(autoincrement())
+  name      String
+  familyId  Int
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  members   Member[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Sacrament {
