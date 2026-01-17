@@ -2,9 +2,20 @@
 import { Request, Response } from 'express';
 import * as eventService from '../services/event.service';
 
+import * as notificationService from '../services/notification.service';
+
 export const createEvent = async (req: Request, res: Response) => {
     try {
         const event = await eventService.createEvent(req.body);
+
+        // Broadcast notification to all users
+        const title = 'New Event: ' + event.title;
+        const body = event.description ? event.description.substring(0, 100) + (event.description.length > 100 ? '...' : '') : 'Check out this new event in the app!';
+
+        // Send asynchronously to avoid blocking the response
+        notificationService.sendPushToAll(title, body, JSON.stringify({ eventId: event.id, type: 'EVENT' }))
+            .catch(err => console.error('Failed to broadcast event notification:', err));
+
         res.status(201).json(event);
     } catch (error: any) {
         res.status(500).json({ message: error.message });

@@ -109,17 +109,27 @@ import * as contentService from '../services/content.service';
 export const getMobileNotifications = async (req: Request, res: Response) => {
     try {
         const userId = (req.user as any).userId;
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+
+        // Strategy: To get the correct sorted page N from merged sources, 
+        // we ideally need the top (page * limit) items from EACH source, 
+        // merge them, sort them, and then slice the specific page window.
+        // This ensures we don't miss items if one source is much newer than others.
+        const fetchLimit = page * limit;
 
         // 1. Fetch User Notifications
-        const userNotifications = await notificationService.getUserNotifications(userId);
+        const userNotifications = await notificationService.getUserNotifications(userId, fetchLimit);
 
         // 2. Fetch Public Announcements
-        const announcements = await contentService.getAnnouncements();
+        const announcements = await contentService.getAnnouncements(fetchLimit);
 
-        // 3. Normalize and Merge
+        // 3. Fetch Broadcasts
+        const broadcasts = await notificationService.getBroadcastHistory(fetchLimit);
+
+        // 4. Normalize and Merge
         const unifiedList: any[] = [];
 
-        // Map Notifications
         userNotifications.forEach((n: any) => {
             unifiedList.push({
                 id: n.id,
@@ -129,30 +139,55 @@ export const getMobileNotifications = async (req: Request, res: Response) => {
                 date: n.createdAt,
                 isRead: n.isRead,
                 meta: n.data ? JSON.parse(n.data) : null,
-                originalId: n.id // Keep original ID for actions like markAsRead
+                originalId: n.id
             });
         });
 
-        // Map Announcements
-        // Announcements are always considered "READ" or just informational streams without read status tracking per user (unless we add that later)
-        // For now, we treated them as 'ANNOUNCEMENT' type
         announcements.forEach((a: any) => {
             unifiedList.push({
-                id: `ann_${a.id}`, // specific ID format to avoid collision
+                id: `ann_${a.id}`,
                 type: 'ANNOUNCEMENT',
                 title: a.title,
                 body: a.content,
                 date: a.createdAt,
-                isRead: true, // Announcements don't have read state in this simple version
+                isRead: true,
                 meta: null,
                 originalId: a.id
             });
         });
 
-        // 4. Sort by Date Descending
+        broadcasts.forEach((b: any) => {
+            if (b.status === 'SENT') {
+                unifiedList.push({
+                    id: `broadcast_${b.id}`,
+                    type: 'NOTIFICATION',
+                    title: b.title,
+                    body: b.body,
+                    date: b.sentAt,
+                    isRead: true,
+                    meta: b.data ? JSON.parse(b.data) : null,
+                    originalId: b.id,
+                    subtype: 'BROADCAST'
+                });
+            }
+        });
+
+        // 5. Sort by Date Descending
         unifiedList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-        res.json(unifiedList);
+        // 6. Pagination Slice
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const pagedData = unifiedList.slice(startIndex, endIndex);
+
+        res.json({
+            data: pagedData,
+            meta: {
+                total: unifiedList.length, // Approximate total of fetched set (or could be real total if services returned counts)
+                page,
+                limit
+            }
+        });
 
     } catch (error: any) {
         res.status(500).json({ message: error.message });

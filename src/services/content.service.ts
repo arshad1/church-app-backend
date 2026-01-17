@@ -12,9 +12,10 @@ export const createAnnouncement = async (userId: number, title: string, content:
     });
 };
 
-export const getAnnouncements = async () => {
+export const getAnnouncements = async (limit: number = 50) => {
     return prisma.announcement.findMany({
         orderBy: { createdAt: 'desc' },
+        take: limit,
         include: {
             author: {
                 include: {

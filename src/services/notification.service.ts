@@ -53,10 +53,11 @@ export const registerDeviceToken = async (userId: number, token: string, platfor
     });
 };
 
-export const getUserNotifications = async (userId: number) => {
+export const getUserNotifications = async (userId: number, limit: number = 50) => {
     return prisma.notification.findMany({
         where: { userId },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
+        take: limit
     });
 };
 
@@ -92,6 +93,22 @@ export const deleteNotification = async (id: number) => {
 
 // --- Push Notification Helpers ---
 
+// Helper to ensure all data values are strings (FCM requirement)
+const sanitizeDataForFCM = (dataStr?: string): { [key: string]: string } => {
+    if (!dataStr) return {};
+    try {
+        const parsed = JSON.parse(dataStr);
+        const sanitized: { [key: string]: string } = {};
+        for (const key in parsed) {
+            sanitized[key] = String(parsed[key]);
+        }
+        return sanitized;
+    } catch (e) {
+        console.warn('Failed to parse push notification data:', e);
+        return {};
+    }
+};
+
 export const sendPushToUser = async (userId: number, title: string, body: string, data?: string) => {
     try {
         const tokens = await prisma.deviceToken.findMany({
@@ -107,7 +124,7 @@ export const sendPushToUser = async (userId: number, title: string, body: string
                 title,
                 body
             },
-            data: data ? JSON.parse(data) : {}
+            data: sanitizeDataForFCM(data)
         };
 
         const response = await admin.messaging().sendEachForMulticast(message);
@@ -138,7 +155,7 @@ export const sendPushToAll = async (title: string, body: string, data?: string, 
         const message: admin.messaging.Message = {
             topic: 'all',
             notification: { title, body },
-            data: data ? JSON.parse(data) : {}
+            data: sanitizeDataForFCM(data)
         };
         await admin.messaging().send(message);
     } catch (error) {
@@ -179,8 +196,9 @@ export const updateBroadcast = async (id: number, title: string, body: string, d
     return history;
 };
 
-export const getBroadcastHistory = async () => {
+export const getBroadcastHistory = async (limit: number = 50) => {
     return prisma.notificationHistory.findMany({
-        orderBy: { sentAt: 'desc' }
+        orderBy: { sentAt: 'desc' },
+        take: limit
     });
 };
