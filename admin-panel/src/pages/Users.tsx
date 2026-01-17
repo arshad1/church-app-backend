@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { usersAPI, membersAPI } from '../services/api';
 
 interface User {
@@ -24,9 +24,13 @@ export default function Users() {
     const [members, setMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
     const [sortBy, setSortBy] = useState<string>('createdAt');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
+    const [total, setTotal] = useState(0);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -38,16 +42,40 @@ export default function Users() {
         memberId: ''
     });
 
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+            setPage(1); // Reset to first page on new search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
     useEffect(() => {
         loadUsers();
+    }, [debouncedSearch, sortBy, sortOrder, page, limit]);
+
+    useEffect(() => {
         loadMembers();
     }, []);
 
     const loadUsers = async () => {
         try {
             setLoading(true);
-            const res = await usersAPI.getAll();
-            setUsers(res.data);
+            const res = await usersAPI.getAll({
+                search: debouncedSearch,
+                sort: sortBy,
+                order: sortOrder,
+                page,
+                limit
+            });
+
+            if (res.data.data) {
+                setUsers(res.data.data);
+                setTotal(res.data.meta.total);
+            } else {
+                setUsers(res.data);
+            }
         } catch (error) {
             console.error('Error loading users:', error);
         } finally {
@@ -57,8 +85,8 @@ export default function Users() {
 
     const loadMembers = async () => {
         try {
-            const res = await membersAPI.getAll();
-            setMembers(res.data);
+            const res = await membersAPI.getAll({ limit: 1000 });
+            setMembers(res.data.data || res.data);
         } catch (error) {
             console.error('Error loading members:', error);
         }
@@ -125,10 +153,10 @@ export default function Users() {
     };
 
     const toggleSelectAll = () => {
-        if (selectedUsers.length === filteredAndSortedUsers.length) {
+        if (selectedUsers.length === users.length) {
             setSelectedUsers([]);
         } else {
-            setSelectedUsers(filteredAndSortedUsers.map(u => u.id));
+            setSelectedUsers(users.map(u => u.id));
         }
     };
 
@@ -147,29 +175,7 @@ export default function Users() {
         }
     };
 
-    const filteredAndSortedUsers = useMemo(() => {
-        let result = users.filter(user =>
-            (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (user.member?.name && user.member.name.toLowerCase().includes(searchTerm.toLowerCase()))
-        );
 
-        result.sort((a, b) => {
-            let valA: any = a[sortBy as keyof User];
-            let valB: any = b[sortBy as keyof User];
-
-            if (sortBy === 'name') {
-                valA = a.member?.name || '';
-                valB = b.member?.name || '';
-            }
-
-            if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-            if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
-            return 0;
-        });
-
-        return result;
-    }, [users, searchTerm, sortBy, sortOrder]);
 
     const SortIcon = ({ column }: { column: string }) => {
         if (sortBy !== column) return null;
@@ -238,7 +244,7 @@ export default function Users() {
                                 <th className="px-6 py-4 w-12">
                                     <input
                                         type="checkbox"
-                                        checked={selectedUsers.length === filteredAndSortedUsers.length && filteredAndSortedUsers.length > 0}
+                                        checked={selectedUsers.length === users.length && users.length > 0}
                                         onChange={toggleSelectAll}
                                         className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                                     />
@@ -268,14 +274,14 @@ export default function Users() {
                                         </div>
                                     </td>
                                 </tr>
-                            ) : filteredAndSortedUsers.length === 0 ? (
+                            ) : users.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                                         No users found.
                                     </td>
                                 </tr>
                             ) : (
-                                filteredAndSortedUsers.map((user) => (
+                                users.map((user) => (
                                     <tr key={user.id} className={`hover:bg-gray-50/80 transition-colors ${selectedUsers.includes(user.id) ? 'bg-primary-50/30' : ''}`}>
                                         <td className="px-6 py-4">
                                             <input
@@ -345,108 +351,163 @@ export default function Users() {
                         </tbody>
                     </table>
                 </div>
-            </div>
 
-            {/* User Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                            <h3 className="text-xl font-bold text-gray-900">
-                                {editingUser ? 'Edit User' : 'Add New User'}
-                            </h3>
-                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg transition-colors">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                {/* Pagination UI */}
+                {!loading && total > 0 && (
+                    <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm text-gray-500">
+                                Showing <span className="font-bold text-gray-900">{(page - 1) * limit + 1}</span> to <span className="font-bold text-gray-900">{Math.min(page * limit, total)}</span> of <span className="font-bold text-gray-900">{total}</span> users
+                            </span>
+                            <select
+                                value={limit}
+                                onChange={(e) => {
+                                    setLimit(parseInt(e.target.value));
+                                    setPage(1);
+                                }}
+                                className="px-2 py-1 bg-white border border-gray-200 rounded text-xs font-bold outline-none focus:ring-2 focus:ring-primary-500/20"
+                            >
+                                <option value={10}>10 per page</option>
+                                <option value={20}>20 per page</option>
+                                <option value={50}>50 per page</option>
+                                <option value={100}>100 per page</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setPage(page - 1)}
+                                disabled={page === 1}
+                                className="p-2 rounded-lg hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none transition-all"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                            <div className="flex items-center gap-1">
+                                {[...Array(Math.ceil(total / limit))].map((_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setPage(i + 1)}
+                                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${page === i + 1 ? 'bg-primary-600 text-white shadow-md' : 'hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200'}`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => setPage(page + 1)}
+                                disabled={page >= Math.ceil(total / limit)}
+                                className="p-2 rounded-lg hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none transition-all"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                 </svg>
                             </button>
                         </div>
-                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-1">Username (Optional)</label>
-                                    <input
-                                        type="text"
-                                        value={formData.username}
-                                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
-                                        placeholder="username"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-1">Email (Optional)</label>
-                                    <input
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
-                                        placeholder="user@example.com"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                                    {editingUser ? 'New Password (leave empty to keep current)' : 'Password'}
-                                </label>
-                                <input
-                                    type="password"
-                                    required={!editingUser}
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
-                                    placeholder="••••••••"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">System Role</label>
-                                <select
-                                    value={formData.role}
-                                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all bg-white"
-                                >
-                                    <option value="MEMBER">Member</option>
-                                    <option value="STAFF">Staff</option>
-                                    <option value="PASTOR">Pastor</option>
-                                    <option value="ADMIN">Admin</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Link to Member Profile</label>
-                                <select
-                                    value={formData.memberId}
-                                    onChange={(e) => setFormData({ ...formData, memberId: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all bg-white"
-                                >
-                                    <option value="">Not Linked</option>
-                                    {members.map(member => (
-                                        <option key={member.id} value={member.id}>
-                                            {member.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <p className="mt-1 text-xs text-gray-500 font-light">
-                                    Optional: Link this login account to an existing church directory profile.
-                                </p>
-                            </div>
-                            <div className="pt-4 flex gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/20"
-                                >
-                                    {editingUser ? 'Save Changes' : 'Create User'}
-                                </button>
-                            </div>
-                        </form>
                     </div>
-                </div>
-            )}
+                )}
+
+                {/* User Modal */}
+                {isModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                                <h3 className="text-xl font-bold text-gray-900">
+                                    {editingUser ? 'Edit User' : 'Add New User'}
+                                </h3>
+                                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg transition-colors">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Username (Optional)</label>
+                                        <input
+                                            type="text"
+                                            value={formData.username}
+                                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                            className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                                            placeholder="username"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Email (Optional)</label>
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                                            placeholder="user@example.com"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                        {editingUser ? 'New Password (leave empty to keep current)' : 'Password'}
+                                    </label>
+                                    <input
+                                        type="password"
+                                        required={!editingUser}
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1">System Role</label>
+                                    <select
+                                        value={formData.role}
+                                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all bg-white"
+                                    >
+                                        <option value="MEMBER">Member</option>
+                                        <option value="STAFF">Staff</option>
+                                        <option value="PASTOR">Pastor</option>
+                                        <option value="ADMIN">Admin</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-1">Link to Member Profile</label>
+                                    <select
+                                        value={formData.memberId}
+                                        onChange={(e) => setFormData({ ...formData, memberId: e.target.value })}
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all bg-white"
+                                    >
+                                        <option value="">Not Linked</option>
+                                        {members.map(member => (
+                                            <option key={member.id} value={member.id}>
+                                                {member.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="mt-1 text-xs text-gray-500 font-light">
+                                        Optional: Link this login account to an existing church directory profile.
+                                    </p>
+                                </div>
+                                <div className="pt-4 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsModalOpen(false)}
+                                        className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/20"
+                                    >
+                                        {editingUser ? 'Save Changes' : 'Create User'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

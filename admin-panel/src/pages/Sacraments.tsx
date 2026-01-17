@@ -79,7 +79,7 @@ export default function Sacraments() {
         setSearchingMembers(true);
         try {
             const res = await membersAPI.getAll({ search: term, limit: 10 });
-            setMembers(res.data);
+            setMembers(res.data.data || res.data);
         } catch (error) {
             console.error('Error searching members:', error);
         } finally {

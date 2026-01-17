@@ -94,7 +94,8 @@ export default function MinistryDetails() {
             const res = await membersAPI.getAll({ limit: 50, search: term });
             // Filter out existing members
             const currentMemberIds = ministry?.members?.map(m => m.id) || [];
-            const available = res.data.filter((m: any) => !currentMemberIds.includes(m.id));
+            const membersList = res.data.data || res.data;
+            const available = membersList.filter((m: any) => !currentMemberIds.includes(m.id));
             setFilteredMembers(available);
         } catch (error) {
             console.error('Error searching members:', error);

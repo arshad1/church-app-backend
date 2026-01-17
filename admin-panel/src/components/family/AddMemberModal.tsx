@@ -39,7 +39,8 @@ export default function AddMemberModal({ isOpen, onClose, onSuccess, familyId, h
     const fetchMembers = async (term: string) => {
         try {
             const res = await membersAPI.getAll({ limit: 1000, search: term });
-            const available = res.data.filter((m: any) => !currentMemberIds.includes(m.id));
+            const membersList = res.data.data || res.data;
+            const available = membersList.filter((m: any) => !currentMemberIds.includes(m.id));
             setFilteredMembers(available);
         } catch (error) {
             console.error('Error searching members:', error);
