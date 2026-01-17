@@ -65,7 +65,7 @@ export const addFamilyMember = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'You are not linked to a family' });
         }
 
-        const { name, familyRole, phone, email, dob, gender, houseName, houseId } = req.body;
+        const { name, familyRole, phone, email, dob, gender, houseName, houseId, spouseId } = req.body;
 
         let targetHouseId = houseId;
 
@@ -113,7 +113,8 @@ export const addFamilyMember = async (req: Request, res: Response) => {
             status: 'ACTIVE', // Or PENDING if approval needed
             dob: dob ? new Date(dob) : undefined,
             gender,
-            houseId: targetHouseId
+            houseId: targetHouseId,
+            spouseId: spouseId ? parseInt(spouseId) : undefined
         });
 
         // If the new member is a HEAD, we should probably mark them as headOfFamily=true?
@@ -182,6 +183,7 @@ export const updateFamilyMember = async (req: Request, res: Response) => {
         if (relationship) updateData.familyRole = relationship;
         if (gender) updateData.gender = gender;
         if (req.body.profileImage) updateData.profileImage = req.body.profileImage;
+        if (req.body.spouseId) updateData.spouseId = parseInt(req.body.spouseId);
 
         const updatedMember = await memberService.updateMember(memberIdToUpdate, updateData);
 
