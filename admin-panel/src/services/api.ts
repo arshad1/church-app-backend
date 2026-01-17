@@ -58,7 +58,7 @@ export const membersAPI = {
 
 // Admin - Families
 export const familiesAPI = {
-    getAll: () => api.get('/admin/families'),
+    getAll: (params?: any) => api.get('/admin/families', { params }),
     getById: (id: number) => api.get(`/admin/families/${id}`),
     create: (data: any) => api.post('/admin/families', data),
     update: (id: number, data: any) => api.put(`/admin/families/${id}`, data),

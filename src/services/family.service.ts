@@ -1,23 +1,43 @@
 import prisma from '../utils/prisma';
 
-export const getAllFamilies = async () => {
-    return prisma.family.findMany({
-        include: {
-            members: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                    profileImage: true,
-                    familyRole: true,
-                    status: true,
-                    headOfFamily: true,
+export const getAllFamilies = async (page: number = 1, limit: number = 10, search?: string) => {
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (search) {
+        where.OR = [
+            { name: { contains: search, mode: 'insensitive' } },
+            { address: { contains: search, mode: 'insensitive' } },
+            { phone: { contains: search, mode: 'insensitive' } },
+            { houseName: { contains: search, mode: 'insensitive' } },
+        ];
+    }
+
+    const [data, total] = await Promise.all([
+        prisma.family.findMany({
+            where,
+            include: {
+                members: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        phone: true,
+                        profileImage: true,
+                        familyRole: true,
+                        status: true,
+                        headOfFamily: true,
+                    },
                 },
             },
-        },
-        orderBy: { createdAt: 'desc' },
-    });
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: limit,
+        }),
+        prisma.family.count({ where }),
+    ]);
+
+    return { data, total };
 };
 
 export const getFamilyById = async (id: number) => {

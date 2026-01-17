@@ -3,8 +3,12 @@ import * as familyService from '../services/family.service';
 
 export const getAllFamilies = async (req: Request, res: Response) => {
     try {
-        const families = await familyService.getAllFamilies();
-        res.json(families);
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const search = req.query.search as string;
+
+        const result = await familyService.getAllFamilies(page, limit, search);
+        res.json(result);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
