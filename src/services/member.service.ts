@@ -1,6 +1,25 @@
 import prisma from '../utils/prisma';
 import bcrypt from 'bcryptjs';
 
+const generateUniqueUsername = async (prefix: string = ''): Promise<string> => {
+    let isUnique = false;
+    let username = '';
+    while (!isUnique) {
+        // Generate a 6-digit random number
+        const randomNum = Math.floor(100000 + Math.random() * 900000);
+        username = `${prefix}${randomNum}`;
+
+        const existing = await prisma.user.findUnique({
+            where: { username } as any
+        });
+
+        if (!existing) {
+            isUnique = true;
+        }
+    }
+    return username;
+};
+
 const createAppUserForMember = async (member: any) => {
     // Check if user already exists for this member
     const existingUser = await prisma.user.findFirst({
@@ -10,10 +29,10 @@ const createAppUserForMember = async (member: any) => {
     if (existingUser) return;
 
     // determine unique username
-    // if email exists, use email. If not, use member ID.
+    // if email exists, use email. If not, generate a 6-digit unique ID.
     let username = member.email;
     if (!username) {
-        username = member.id.toString();
+        username = await generateUniqueUsername('MB');
     }
 
     // Default password
@@ -27,7 +46,7 @@ const createAppUserForMember = async (member: any) => {
                 password: hashedPassword,
                 memberId: member.id,
                 role: 'MEMBER'
-            }
+            } as any
         });
     } catch (error) {
         console.error("Auto-creation of user failed", error);

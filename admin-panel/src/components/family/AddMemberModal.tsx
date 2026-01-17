@@ -23,7 +23,8 @@ export default function AddMemberModal({ isOpen, onClose, onSuccess, familyId, h
         name: '',
         email: '',
         phone: '',
-        familyRole: 'MEMBER'
+        familyRole: 'MEMBER',
+        livingStatus: 'ALIVE'
     });
 
     useEffect(() => {
@@ -247,6 +248,17 @@ export default function AddMemberModal({ isOpen, onClose, onSuccess, familyId, h
                                     <option value="SON">Son</option>
                                     <option value="DAUGHTER">Daughter</option>
                                     <option value="MEMBER">Member</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Living Status</label>
+                                <select
+                                    value={newMemberData.livingStatus}
+                                    onChange={e => setNewMemberData({ ...newMemberData, livingStatus: e.target.value })}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none text-sm font-semibold"
+                                >
+                                    <option value="ALIVE">Alive</option>
+                                    <option value="DECEASED">Deceased</option>
                                 </select>
                             </div>
                         </div>

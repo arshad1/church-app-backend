@@ -29,7 +29,8 @@ export default function MemberForm() {
         spouseId: '',
         familyRole: 'MEMBER',
         profileImage: '',
-        headOfFamily: false
+        headOfFamily: false,
+        livingStatus: 'ALIVE'
     });
 
     const [families, setFamilies] = useState<Family[]>([]);
@@ -100,7 +101,8 @@ export default function MemberForm() {
                 spouseId: member.spouseId?.toString() || '',
                 familyRole: member.familyRole || 'MEMBER',
                 profileImage: member.profileImage || '',
-                headOfFamily: member.headOfFamily || false
+                headOfFamily: member.headOfFamily || false,
+                livingStatus: member.livingStatus || 'ALIVE'
             });
         } catch (error) {
             setError('Failed to load member profile');
@@ -321,6 +323,18 @@ export default function MemberForm() {
                                         </div>
                                     )}
 
+                                    <div>
+                                        <label className="block text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Living Status</label>
+                                        <select
+                                            name="livingStatus"
+                                            value={formData.livingStatus}
+                                            onChange={handleChange}
+                                            className="w-full px-5 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all font-bold text-gray-900 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%236b7280%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_1.25rem_center] bg-no-repeat"
+                                        >
+                                            <option value="ALIVE">Alive</option>
+                                            <option value="DECEASED">Deceased</option>
+                                        </select>
+                                    </div>
                                     <div>
                                         <label className="block text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Family Role</label>
                                         <select

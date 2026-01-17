@@ -50,6 +50,7 @@ model Member {
   dob          DateTime? // Date of Birth
   gender       String?   // MALE, FEMALE, OTHER
   headOfFamily Boolean  @default(false)
+  livingStatus String   @default("ALIVE") // ALIVE, DECEASED
   status       String   @default("ACTIVE")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

@@ -35,6 +35,7 @@ interface Member {
     email?: string;
     phone?: string;
     status: string;
+    livingStatus: string;
     profileImage?: string;
     family?: {
         id: number;
@@ -191,6 +192,9 @@ export default function MemberDetails() {
                                 <h1 className="text-4xl font-black text-gray-900 leading-none">{member.name}</h1>
                                 <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm ${getStatusColor(member.status)}`}>
                                     {getStatusLabel(member.status)}
+                                </span>
+                                <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm ${member.livingStatus === 'DECEASED' ? 'bg-gray-800 text-white border-black' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                    {member.livingStatus}
                                 </span>
                             </div>
                             <div className="flex items-center gap-3">
