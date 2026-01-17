@@ -38,14 +38,22 @@ export const updateUser = async (userId: number, data: any) => {
 
 // ... existing code ...
 
-export const getAllUsers = async (params?: { search?: string; sort?: string; order?: 'asc' | 'desc' }) => {
-    const { search, sort, order = 'desc' } = params || {};
+export const getAllUsers = async (params?: {
+    search?: string;
+    sort?: string;
+    order?: 'asc' | 'desc';
+    page?: number;
+    limit?: number;
+}) => {
+    const { search, sort, order = 'desc', page = 1, limit = 10 } = params || {};
+    const skip = (page - 1) * limit;
 
     const where: any = {};
     if (search) {
         where.OR = [
-            { email: { contains: search } },
-            { member: { name: { contains: search } } }
+            { email: { contains: search, mode: 'insensitive' } },
+            { username: { contains: search, mode: 'insensitive' } },
+            { member: { name: { contains: search, mode: 'insensitive' } } }
         ];
     }
 
@@ -60,18 +68,33 @@ export const getAllUsers = async (params?: { search?: string; sort?: string; ord
         orderBy.createdAt = 'desc';
     }
 
-    return prisma.user.findMany({
-        where,
-        include: {
-            member: {
-                select: {
-                    name: true,
-                    profileImage: true
+    const [users, total] = await Promise.all([
+        prisma.user.findMany({
+            where,
+            include: {
+                member: {
+                    select: {
+                        name: true,
+                        profileImage: true
+                    }
                 }
-            }
-        },
-        orderBy
-    });
+            },
+            orderBy,
+            skip,
+            take: limit
+        }),
+        prisma.user.count({ where })
+    ]);
+
+    return {
+        data: users,
+        meta: {
+            total,
+            page,
+            limit,
+            pages: Math.ceil(total / limit)
+        }
+    };
 };
 
 export const deleteUser = async (userId: number) => {

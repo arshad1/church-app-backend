@@ -30,14 +30,20 @@ export const updateProfile = async (req: Request, res: Response) => {
 
 export const getAllUsers = async (req: Request, res: Response) => {
     try {
-        const { search, sort, order } = req.query;
-        const users = await userService.getAllUsers({
+        const { search, sort, order, page, limit } = req.query;
+        const result = await userService.getAllUsers({
             search: search as string,
             sort: sort as string,
-            order: order as 'asc' | 'desc'
+            order: order as 'asc' | 'desc',
+            page: page ? parseInt(page as string) : 1,
+            limit: limit ? parseInt(limit as string) : 10,
         });
-        const usersWithoutPassword = users.map(({ password, ...user }) => user);
-        res.json(usersWithoutPassword);
+
+        const usersWithoutPassword = result.data.map(({ password, ...user }: any) => user);
+        res.json({
+            data: usersWithoutPassword,
+            meta: result.meta
+        });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

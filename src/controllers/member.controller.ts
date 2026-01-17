@@ -3,11 +3,15 @@ import * as memberService from '../services/member.service';
 
 export const getAllMembers = async (req: Request, res: Response) => {
     try {
-        const { status, familyId, search } = req.query;
+        const { status, familyId, search, page, limit, sortBy, sortOrder } = req.query;
         const members = await memberService.getAllMembers({
             status: status as string,
             familyId: familyId ? parseInt(familyId as string) : undefined,
             search: search as string,
+            page: page ? parseInt(page as string) : 1,
+            limit: limit ? parseInt(limit as string) : 10,
+            sortBy: sortBy as string,
+            sortOrder: sortOrder as 'asc' | 'desc',
         });
 
         res.json(members);

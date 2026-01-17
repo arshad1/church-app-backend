@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { membersAPI } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,20 +21,46 @@ export default function Members() {
     const [members, setMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
     const [sortBy, setSortBy] = useState<string>('createdAt');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
+    const [total, setTotal] = useState(0);
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+            setPage(1); // Reset to first page on new search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
 
     useEffect(() => {
         loadMembers();
-    }, []);
+    }, [debouncedSearch, statusFilter, sortBy, sortOrder, page, limit]);
 
     const loadMembers = async () => {
         try {
             setLoading(true);
-            const res = await membersAPI.getAll();
-            setMembers(res.data);
+            const res = await membersAPI.getAll({
+                search: debouncedSearch,
+                status: statusFilter,
+                sortBy,
+                sortOrder,
+                page,
+                limit
+            });
+            // Handle new response structure { data, meta }
+            if (res.data.data) {
+                setMembers(res.data.data);
+                setTotal(res.data.meta.total);
+            } else {
+                setMembers(res.data); // Fallback for old structure if any
+            }
         } catch (error) {
             console.error('Error loading members:', error);
         } finally {
@@ -83,40 +109,11 @@ export default function Members() {
         }
     };
 
-    const filteredAndSortedMembers = useMemo(() => {
-        let result = members.filter(member => {
-            const matchesSearch =
-                member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                member.phone?.includes(searchTerm);
-
-            const matchesStatus = statusFilter === 'ALL' || member.status === statusFilter;
-
-            return matchesSearch && matchesStatus;
-        });
-
-        result.sort((a: any, b: any) => {
-            let valA = a[sortBy];
-            let valB = b[sortBy];
-
-            if (sortBy === 'family') {
-                valA = a.family?.name || '';
-                valB = b.family?.name || '';
-            }
-
-            if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-            if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
-            return 0;
-        });
-
-        return result;
-    }, [members, searchTerm, statusFilter, sortBy, sortOrder]);
-
     const toggleSelectAll = () => {
-        if (selectedMembers.length === filteredAndSortedMembers.length) {
+        if (selectedMembers.length === members.length) {
             setSelectedMembers([]);
         } else {
-            setSelectedMembers(filteredAndSortedMembers.map(m => m.id));
+            setSelectedMembers(members.map(m => m.id));
         }
     };
 
@@ -210,7 +207,7 @@ export default function Members() {
                                 <th className="px-6 py-4 w-12">
                                     <input
                                         type="checkbox"
-                                        checked={selectedMembers.length === filteredAndSortedMembers.length && filteredAndSortedMembers.length > 0}
+                                        checked={selectedMembers.length === members.length && members.length > 0}
                                         onChange={toggleSelectAll}
                                         className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                                     />
@@ -240,14 +237,14 @@ export default function Members() {
                                         </div>
                                     </td>
                                 </tr>
-                            ) : filteredAndSortedMembers.length === 0 ? (
+                            ) : members.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                                         No members found matching your search.
                                     </td>
                                 </tr>
                             ) : (
-                                filteredAndSortedMembers.map((member) => (
+                                members.map((member) => (
                                     <tr
                                         key={member.id}
                                         onClick={() => navigate(`/members/${member.id}`)}
@@ -328,6 +325,61 @@ export default function Members() {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination UI */}
+                {!loading && total > 0 && (
+                    <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm text-gray-500">
+                                Showing <span className="font-bold text-gray-900">{(page - 1) * limit + 1}</span> to <span className="font-bold text-gray-900">{Math.min(page * limit, total)}</span> of <span className="font-bold text-gray-900">{total}</span> members
+                            </span>
+                            <select
+                                value={limit}
+                                onChange={(e) => {
+                                    setLimit(parseInt(e.target.value));
+                                    setPage(1);
+                                }}
+                                className="px-2 py-1 bg-white border border-gray-200 rounded text-xs font-bold outline-none focus:ring-2 focus:ring-primary-500/20"
+                            >
+                                <option value={10}>10 per page</option>
+                                <option value={20}>20 per page</option>
+                                <option value={50}>50 per page</option>
+                                <option value={100}>100 per page</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setPage(page - 1)}
+                                disabled={page === 1}
+                                className="p-2 rounded-lg hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none transition-all"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                            <div className="flex items-center gap-1">
+                                {[...Array(Math.ceil(total / limit))].map((_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setPage(i + 1)}
+                                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${page === i + 1 ? 'bg-primary-600 text-white shadow-md' : 'hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200'}`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => setPage(page + 1)}
+                                disabled={page >= Math.ceil(total / limit)}
+                                className="p-2 rounded-lg hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none transition-all"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
