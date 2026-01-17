@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
@@ -7,6 +8,7 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const { login } = useAuth();
+    const { settings } = useSettings();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -31,17 +33,23 @@ export default function Login() {
             <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 w-full max-w-md border border-white/20">
                 {/* Logo/Icon */}
                 <div className="flex justify-center mb-6">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center shadow-lg transform transition-transform hover:scale-105 border-2 border-accent-400">
-                        <svg className="w-10 h-10 text-accent-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center shadow-lg transform transition-transform hover:scale-105 border-2 border-accent-400 overflow-hidden">
+                        {settings?.logoUrl ? (
+                            <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                        ) : (
+                            <svg className="w-10 h-10 text-accent-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                        )}
                     </div>
                 </div>
 
                 {/* Title */}
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-primary-900 mb-2">Church Admin</h2>
-                    <p className="text-gray-600">Sign in to manage your church</p>
+                    <h2 className="text-3xl font-bold text-primary-900 mb-2">
+                        {settings?.churchName || 'Church Admin'}
+                    </h2>
+                    <p className="text-gray-600 text-sm font-medium">Sign in to manage your church</p>
                 </div>
 
                 {/* Error Message */}

@@ -5,9 +5,11 @@ import { authenticate, isAdmin } from '../middleware/auth.middleware';
 const router = Router();
 
 // Routes are mounted at /api/admin/settings
-router.use(authenticate, isAdmin);
 
+// GET is open to allow fetching church name/logo for login page
 router.get('/', settingsController.getSettings);
-router.put('/', settingsController.updateSettings);
+
+// Only update requires authentication
+router.put('/', authenticate, isAdmin, settingsController.updateSettings);
 
 export default router;
