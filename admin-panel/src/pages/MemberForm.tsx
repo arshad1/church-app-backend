@@ -34,7 +34,7 @@ export default function MemberForm() {
 
     const [families, setFamilies] = useState<Family[]>([]);
     const [houses, setHouses] = useState<House[]>([]);
-    const [familyMembers, setFamilyMembers] = useState<{ id: number; name: string }[]>([]);
+    const [familyMembers, setFamilyMembers] = useState<{ id: number; name: string; houseId?: number }[]>([]);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
@@ -346,8 +346,10 @@ export default function MemberForm() {
                                                 placeholder="Select Spouse"
                                                 options={
                                                     // Filter members of same family, excluding self
+                                                    // AND filter by House if selected
                                                     familyMembers
                                                         .filter(m => String(m.id) !== String(id))
+                                                        .filter(m => !formData.houseId || (m.houseId && String(m.houseId) === String(formData.houseId)))
                                                         .map(m => ({ id: m.id, label: m.name }))
                                                 }
                                                 value={Number(formData.spouseId)}

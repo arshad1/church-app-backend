@@ -53,6 +53,7 @@ export const membersAPI = {
     delete: (id: number) => api.delete(`/admin/members/${id}`),
     deleteBulk: (ids: number[]) => api.post('/admin/members/delete-bulk', { ids }),
     approve: (id: number) => api.post(`/admin/members/${id}/approve`),
+    getByFamily: (familyId: number) => api.get(`/admin/members/family/${familyId}`),
 };
 
 // Admin - Families

@@ -37,6 +37,13 @@ export const getFamilyById = async (id: number) => {
                             status: true,
                             headOfFamily: true,
                             sacraments: true,
+                            spouse: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    profileImage: true,
+                                }
+                            }
                         },
                     },
                 },
@@ -53,6 +60,13 @@ export const getFamilyById = async (id: number) => {
                     status: true,
                     headOfFamily: true,
                     sacraments: true,
+                    spouse: {
+                        select: {
+                            id: true,
+                            name: true,
+                            profileImage: true,
+                        }
+                    }
                 },
             },
             relatedTo: {

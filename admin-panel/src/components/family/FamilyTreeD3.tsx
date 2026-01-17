@@ -10,6 +10,11 @@ interface Member {
     familyRole?: string;
     headOfFamily?: boolean;
     profileImage?: string;
+    spouse?: {
+        id: number;
+        name: string;
+        profileImage?: string;
+    };
 }
 
 interface House {
@@ -46,6 +51,10 @@ interface TreeNode {
     role?: string;
     headOfHouse?: boolean;
     children?: TreeNode[];
+    spouse?: {
+        name: string;
+        image?: string;
+    };
 }
 
 export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyTreeD3Props) {
@@ -83,18 +92,33 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
                     houseNode.image = head.profileImage;
                     houseNode.role = 'Head of House';
                     houseNode.headOfHouse = true;
+                    // Check for spouse
+                    if (head.spouse) {
+                        houseNode.spouse = {
+                            name: head.spouse.name,
+                            image: head.spouse.profileImage
+                        };
+                    }
                     houseNode.data = { ...house, headName: head.name || head.email, headId: head.id };
                 }
 
                 otherMembers.forEach(member => {
-                    houseNode.children?.push({
+                    const memberNode: TreeNode = {
                         name: member.name || member.email,
                         type: 'member',
                         id: member.id,
                         data: member,
                         image: member.profileImage,
-                        role: member.familyRole
-                    });
+                        role: member.familyRole,
+                        children: []
+                    };
+                    if (member.spouse) {
+                        memberNode.spouse = {
+                            name: member.spouse.name,
+                            image: member.spouse.profileImage
+                        };
+                    }
+                    houseNode.children?.push(memberNode);
                 });
                 rootData.children?.push(houseNode);
             });
@@ -108,14 +132,22 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
                 children: []
             };
             unassignedMembers.forEach(member => {
-                unassignedNode.children?.push({
+                const memberNode: TreeNode = {
                     name: member.name || member.email,
                     type: 'member',
                     id: member.id,
                     data: member,
                     image: member.profileImage,
-                    role: member.familyRole
-                });
+                    role: member.familyRole,
+                    children: []
+                };
+                if (member.spouse) {
+                    memberNode.spouse = {
+                        name: member.spouse.name,
+                        image: member.spouse.profileImage
+                    };
+                }
+                unassignedNode.children?.push(memberNode);
             });
             rootData.children?.push(unassignedNode);
         }
@@ -160,7 +192,7 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
         // For now simple re-render is fine.
         rootRef.current = root;
 
-        const tree = d3.tree<TreeNode>().nodeSize([70, 150]);
+        const tree = d3.tree<TreeNode>().nodeSize([200, 180]); // Increased spacing for spouse info
 
         update(root);
 
@@ -180,7 +212,7 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
                 .attr('transform', (d) => `translate(${source.x0 || 0},${source.y0 || 0})`)
                 .attr('cursor', 'pointer');
 
-            // Circle / Main Shape
+            // --- Main Member Circle ---
             nodeEnter.append('circle')
                 .attr('class', 'node-circle')
                 .attr('r', 1e-6)
@@ -213,20 +245,83 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
                 } else {
                     // Fallback to Initial Letter
                     el.append('text')
+                        .attr('class', 'node-initial')
                         .attr('dy', '.35em')
                         .attr('text-anchor', 'middle')
                         .text((d.data.name || '?').charAt(0).toUpperCase())
-                        .attr('fill', d.data.type === 'root' ? 'white' : '#6b7280') // White for root, grey for others
+                        .attr('fill', d.data.type === 'root' ? 'white' : '#6b7280')
                         .attr('font-size', '24px')
                         .attr('font-weight', 'bold')
                         .attr('pointer-events', 'none')
                         .attr('opacity', 0)
                         .transition().duration(duration).attr('opacity', 1);
                 }
+
+                // --- SPOUSE RENDERING ---
+                if (d.data.spouse) {
+                    const overlayX = 60; // Moved right
+                    const overlayY = 65; // Moved down to clear Edit button (which ends at y~22)
+
+                    // Dotted Line (Rendered BEHIND the circles)
+                    // We insert it before the main circle so it creates a nice connection
+                    el.insert('line', '.node-circle')
+                        .attr('x1', 0).attr('y1', 0)
+                        .attr('x2', overlayX).attr('y2', overlayY)
+                        .attr('stroke', '#ec4899')
+                        .attr('stroke-width', 2)
+                        .attr('stroke-dasharray', '5,5');
+
+
+                    const spouseGroup = el.append('g')
+                        .attr('class', 'spouse-group')
+                        .attr('transform', `translate(${overlayX}, ${overlayY})`); // Offset
+
+                    // Spouse Circle
+                    spouseGroup.append('circle')
+                        .attr('r', 20)
+                        .attr('fill', '#fff')
+                        .attr('stroke', '#ec4899') // Pink for spouse?
+                        .attr('stroke-width', 2);
+
+                    // Spouse Image
+                    if (d.data.spouse.image) {
+                        const suid = `sclip-${Math.random().toString(36).substr(2, 9)}`;
+                        spouseGroup.append('defs').append('clipPath')
+                            .attr('id', suid)
+                            .append('circle')
+                            .attr('r', 20);
+
+                        spouseGroup.append('image')
+                            .attr('xlink:href', d.data.spouse.image)
+                            .attr('x', -20).attr('y', -20)
+                            .attr('width', 40).attr('height', 40)
+                            .attr('clip-path', `url(#${suid})`)
+                            .attr('preserveAspectRatio', 'xMidYMid slice');
+                    } else {
+                        spouseGroup.append('text')
+                            .attr('dy', '.35em')
+                            .attr('text-anchor', 'middle')
+                            .text((d.data.spouse.name || '?').charAt(0).toUpperCase())
+                            .attr('fill', '#ec4899')
+                            .attr('font-size', '14px')
+                            .attr('font-weight', 'bold')
+                            .attr('pointer-events', 'none');
+                    }
+
+                    // Spouse Label
+                    spouseGroup.append('text')
+                        .attr('dy', 32)
+                        .attr('text-anchor', 'middle')
+                        .text(d.data.spouse.name?.split(' ')[0]) // First name only to save space
+                        .style('font-size', '10px')
+                        .style('fill', '#ec4899')
+                        .style('font-weight', 'bold');
+                }
             });
 
             // Labels
             nodeEnter.append('text')
+                .attr('class', 'node-label') // Added class for specific selection
                 .attr('dy', 45)
                 .attr('text-anchor', 'middle')
                 .text((d: any) => d.data.name?.length > 15 ? d.data.name.substring(0, 15) + '...' : d.data.name)
@@ -238,7 +333,7 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
             const actionGroup = nodeEnter.append('g')
                 .attr('class', 'action-group')
                 .attr('opacity', 0)
-                .attr('transform', 'translate(35, -20)');
+                .attr('transform', 'translate(45, -20)'); // Moved slightly right
 
             // View Button
             actionGroup.append('circle')
@@ -311,8 +406,13 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
                 .attr('r', 30)
                 .style('fill', (d: any) => d._children ? '#eff6ff' : (d.data.type === 'root' ? '#1e40af' : '#fff'));
 
-            nodeUpdate.select('text')
+            // Select only the label text for the update transition
+            nodeUpdate.select('text.node-label')
                 .style('fill-opacity', 1);
+
+            // Allow spouse group? Yes, it's inside enter, no need to update implicitly mostly
+            nodeUpdate.select('g.spouse-group')
+                .attr('opacity', 1);
 
             // EXIT
             const nodeExit = node.exit().transition()
@@ -323,7 +423,7 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
             nodeExit.select('circle')
                 .attr('r', 1e-6);
 
-            nodeExit.select('text')
+            nodeExit.selectAll('text')
                 .style('fill-opacity', 1e-6);
 
             // --- LINKS ---
