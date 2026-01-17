@@ -474,7 +474,7 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
                 d._children = d.children as MetricNode[];
                 d.children = null as any;
             } else {
-                d.children = d._children as TreeNode[];
+                d.children = d._children as MetricNode[];
                 d._children = null;
             }
             update(d);
