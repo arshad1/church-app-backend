@@ -15,6 +15,11 @@ interface Member {
     familyRole?: string;
     headOfFamily?: boolean;
     profileImage?: string;
+    spouse?: {
+        id: number;
+        name: string;
+        profileImage?: string;
+    };
 }
 
 interface Family {

@@ -13,6 +13,11 @@ interface Member {
     headOfFamily?: boolean;
     profileImage?: string;
     houseId?: number | null;
+    spouse?: {
+        id: number;
+        name: string;
+        profileImage?: string;
+    };
 }
 
 interface House {
@@ -137,6 +142,13 @@ export default function HouseList({ houses = [], unassignedMembers = [], onRefre
                                             ))}
                                         </select>
                                     </div>
+
+                                    {member.spouse && (
+                                        <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                            <span className="font-medium text-[10px] uppercase tracking-wide text-gray-400">Spouse of:</span>
+                                            <span className="font-bold text-gray-700">{member.spouse.name}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

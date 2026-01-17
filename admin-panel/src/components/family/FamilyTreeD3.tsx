@@ -324,7 +324,13 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
                 .attr('class', 'node-label') // Added class for specific selection
                 .attr('dy', 45)
                 .attr('text-anchor', 'middle')
-                .text((d: any) => d.data.name?.length > 15 ? d.data.name.substring(0, 15) + '...' : d.data.name)
+                .text((d: any) => {
+                    let text = d.data.name?.length > 15 ? d.data.name.substring(0, 15) + '...' : d.data.name;
+                    if (d.data.role && d.data.role !== 'MEMBER') {
+                        text += ` (${d.data.role})`;
+                    }
+                    return text;
+                })
                 .style('font-size', '12px')
                 .style('font-weight', 'bold')
                 .style('fill-opacity', 1e-6);

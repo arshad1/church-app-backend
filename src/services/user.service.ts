@@ -11,8 +11,9 @@ export const getUserById = async (userId: number) => {
                         include: {
                             members: {
                                 where: { status: 'ACTIVE' },
-                                select: { id: true, name: true, familyRole: true, profileImage: true, dob: true, gender: true }
-                            }
+                                select: { id: true, name: true, familyRole: true, profileImage: true, dob: true, gender: true, spouseId: true }
+                            },
+                            houses: true
                         }
                     },
                     sacraments: true,
