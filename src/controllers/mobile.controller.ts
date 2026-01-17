@@ -100,6 +100,65 @@ export const getDirectory = async (req: Request, res: Response) => {
     }
 };
 
+import * as notificationService from '../services/notification.service';
+import * as contentService from '../services/content.service';
+
+/**
+ * Get unified list of User Notifications and Public Announcements.
+ */
+export const getMobileNotifications = async (req: Request, res: Response) => {
+    try {
+        const userId = (req.user as any).userId;
+
+        // 1. Fetch User Notifications
+        const userNotifications = await notificationService.getUserNotifications(userId);
+
+        // 2. Fetch Public Announcements
+        const announcements = await contentService.getAnnouncements();
+
+        // 3. Normalize and Merge
+        const unifiedList: any[] = [];
+
+        // Map Notifications
+        userNotifications.forEach((n: any) => {
+            unifiedList.push({
+                id: n.id,
+                type: 'NOTIFICATION',
+                title: n.title,
+                body: n.body,
+                date: n.createdAt,
+                isRead: n.isRead,
+                meta: n.data ? JSON.parse(n.data) : null,
+                originalId: n.id // Keep original ID for actions like markAsRead
+            });
+        });
+
+        // Map Announcements
+        // Announcements are always considered "READ" or just informational streams without read status tracking per user (unless we add that later)
+        // For now, we treated them as 'ANNOUNCEMENT' type
+        announcements.forEach((a: any) => {
+            unifiedList.push({
+                id: `ann_${a.id}`, // specific ID format to avoid collision
+                type: 'ANNOUNCEMENT',
+                title: a.title,
+                body: a.content,
+                date: a.createdAt,
+                isRead: true, // Announcements don't have read state in this simple version
+                meta: null,
+                originalId: a.id
+            });
+        });
+
+        // 4. Sort by Date Descending
+        unifiedList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        res.json(unifiedList);
+
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 import * as houseService from '../services/house.service';
 
 /**

@@ -16,6 +16,7 @@ router.use(authenticate);
 // Profile & Family
 router.get('/profile', mobileController.getMyProfile);
 router.put('/profile', mobileController.updateMyProfile);
+router.get('/notifications', mobileController.getMobileNotifications);
 router.post('/family/members', mobileController.addFamilyMember);
 router.put('/family/members/:memberId', mobileController.updateFamilyMember);
 router.delete('/family/members/:memberId', mobileController.deleteFamilyMember);
