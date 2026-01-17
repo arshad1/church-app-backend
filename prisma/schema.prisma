@@ -66,6 +66,11 @@ model Member {
   ministries  MinistryMember[]
   registrations Registration[]
   requests     PrayerRequest[]
+
+  // Spouse Relation
+  spouseId    Int?     @unique
+  spouse      Member?  @relation("SpouseRelation", fields: [spouseId], references: [id])
+  spouseOf    Member?  @relation("SpouseRelation")
 }
 
 model Family {

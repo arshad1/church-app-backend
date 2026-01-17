@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { membersAPI, familiesAPI, uploadsAPI } from '../services/api';
+import { membersAPI, familiesAPI, uploadsAPI, housesAPI } from '../services/api';
+import SearchableSelect from '../components/common/SearchableSelect';
 
 interface Family {
     id: number;
     name: string;
     houseName?: string;
+}
+
+interface House {
+    id: number;
+    name: string;
 }
 
 export default function MemberForm() {
@@ -19,12 +25,16 @@ export default function MemberForm() {
         phone: '',
         status: 'ACTIVE',
         familyId: '',
+        houseId: '',
+        spouseId: '',
         familyRole: 'MEMBER',
         profileImage: '',
         headOfFamily: false
     });
 
     const [families, setFamilies] = useState<Family[]>([]);
+    const [houses, setHouses] = useState<House[]>([]);
+    const [familyMembers, setFamilyMembers] = useState<{ id: number; name: string }[]>([]);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
@@ -37,12 +47,41 @@ export default function MemberForm() {
         }
     }, [id]);
 
+    useEffect(() => {
+        if (formData.familyId) {
+            loadHouses(Number(formData.familyId));
+            loadFamilyMembers(Number(formData.familyId));
+        } else {
+            setHouses([]);
+            setFamilyMembers([]);
+        }
+    }, [formData.familyId]);
+
     const loadFamilies = async () => {
         try {
             const res = await familiesAPI.getAll();
             setFamilies(res.data);
         } catch (error) {
             console.error('Error loading families:', error);
+        }
+    };
+
+    const loadHouses = async (familyId: number) => {
+        try {
+            const res = await housesAPI.getByFamily(familyId);
+            setHouses(res.data);
+        } catch (error) {
+            console.error('Error loading houses:', error);
+        }
+    };
+
+    const loadFamilyMembers = async (familyId: number) => {
+        try {
+            // Fetch members of the family to populate Spouse list
+            const res = await membersAPI.getByFamily(familyId);
+            setFamilyMembers(res.data);
+        } catch (error) {
+            console.error('Error loading family members:', error);
         }
     };
 
@@ -57,6 +96,8 @@ export default function MemberForm() {
                 phone: member.phone || '',
                 status: member.status || 'ACTIVE',
                 familyId: member.family?.id?.toString() || '',
+                houseId: member.houseId?.toString() || '',
+                spouseId: member.spouseId?.toString() || '',
                 familyRole: member.familyRole || 'MEMBER',
                 profileImage: member.profileImage || '',
                 headOfFamily: member.headOfFamily || false
@@ -75,6 +116,14 @@ export default function MemberForm() {
             ...prev,
             [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
         }));
+    };
+
+    const handleFamilyChange = (value: string | number) => {
+        setFormData(prev => ({ ...prev, familyId: value.toString(), houseId: '', spouseId: '' }));
+    };
+
+    const handleHouseChange = (value: string | number) => {
+        setFormData(prev => ({ ...prev, houseId: value.toString() }));
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,6 +151,8 @@ export default function MemberForm() {
             const payload = {
                 ...formData,
                 familyId: formData.familyId ? Number(formData.familyId) : null,
+                houseId: formData.houseId ? Number(formData.houseId) : null,
+                spouseId: formData.spouseId ? Number(formData.spouseId) : null,
             };
 
             if (isEdit) {
@@ -119,6 +170,16 @@ export default function MemberForm() {
             setLoading(false);
         }
     };
+
+    const familyOptions = families.map(f => ({
+        id: f.id,
+        label: f.name // Use just the name, or construct a label if houseName is crucial context: `${f.name} ${f.houseName ? `(${f.houseName})` : ''}`
+    }));
+
+    const houseOptions = houses.map(h => ({
+        id: h.id,
+        label: h.name
+    }));
 
     return (
         <div className="max-w-4xl mx-auto space-y-8">
@@ -239,21 +300,27 @@ export default function MemberForm() {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Family Unit</label>
-                                        <select
-                                            name="familyId"
-                                            value={formData.familyId}
-                                            onChange={handleChange}
-                                            className="w-full px-5 py-3.5 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all font-bold text-gray-900 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%236b7280%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_1.25rem_center] bg-no-repeat"
-                                        >
-                                            <option value="">Unassigned</option>
-                                            {families.map(f => (
-                                                <option key={f.id} value={f.id}>
-                                                    {f.name} {f.houseName ? `(${f.houseName})` : ''}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        <SearchableSelect
+                                            label="Family"
+                                            placeholder="Select Family"
+                                            options={familyOptions}
+                                            value={Number(formData.familyId)}
+                                            onChange={handleFamilyChange}
+                                        />
                                     </div>
+
+                                    {formData.familyId && (
+                                        <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <SearchableSelect
+                                                label="House"
+                                                placeholder="Select House (Optional)"
+                                                options={houseOptions}
+                                                value={Number(formData.houseId)}
+                                                onChange={handleHouseChange}
+                                            />
+                                        </div>
+                                    )}
+
                                     <div>
                                         <label className="block text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Family Role</label>
                                         <select
@@ -264,10 +331,31 @@ export default function MemberForm() {
                                         >
                                             <option value="HEAD">Head of Family</option>
                                             <option value="SPOUSE">Spouse</option>
-                                            <option value="CHILD">Child</option>
+                                            <option value="FATHER">Father</option>
+                                            <option value="MOTHER">Mother</option>
+                                            <option value="SON">Son</option>
+                                            <option value="DAUGHTER">Daughter</option>
                                             <option value="MEMBER">Other Member</option>
                                         </select>
                                     </div>
+
+                                    {formData.familyRole === 'SPOUSE' && (
+                                        <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <SearchableSelect
+                                                label="Spouse of"
+                                                placeholder="Select Spouse"
+                                                options={
+                                                    // Filter members of same family, excluding self
+                                                    familyMembers
+                                                        .filter(m => String(m.id) !== String(id))
+                                                        .map(m => ({ id: m.id, label: m.name }))
+                                                }
+                                                value={Number(formData.spouseId)}
+                                                onChange={(val) => setFormData(prev => ({ ...prev, spouseId: val.toString() }))}
+                                            />
+                                        </div>
+                                    )}
+
                                     <div className="md:col-span-2">
                                         <label className="block text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Directory Status</label>
                                         <div className="flex gap-4">

@@ -33,7 +33,7 @@ export const getMemberById = async (req: Request, res: Response) => {
 
 export const createMember = async (req: Request, res: Response) => {
     try {
-        const { name, email, phone, role, status, familyId, profileImage, familyRole } = req.body;
+        const { name, email, phone, role, status, familyId, profileImage, familyRole, houseId } = req.body;
 
         if (!name) {
             return res.status(400).json({ message: 'Name is required' });
@@ -46,7 +46,9 @@ export const createMember = async (req: Request, res: Response) => {
             profileImage,
             status,
             familyId: familyId ? Number(familyId) : undefined,
-            familyRole
+            familyRole,
+            houseId: houseId ? Number(houseId) : undefined,
+            spouseId: req.body.spouseId ? Number(req.body.spouseId) : undefined
         });
 
         res.status(201).json(member);
