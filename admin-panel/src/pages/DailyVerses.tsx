@@ -27,7 +27,7 @@ export default function DailyVerses() {
 
     // Pagination State
     const [page, setPage] = useState(1);
-    const [limit, setLimit] = useState(9); // 9 for grid layout (3x3)
+    const [limit] = useState(9); // 9 for grid layout (3x3)
     const [total, setTotal] = useState(0);
 
     // Settings State

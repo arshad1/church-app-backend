@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as d3 from 'd3';
 
@@ -209,7 +209,7 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
             // ENTER
             const nodeEnter = node.enter().append('g')
                 .attr('class', 'node')
-                .attr('transform', (d) => `translate(${source.x0 || 0},${source.y0 || 0})`)
+                .attr('transform', (_d) => `translate(${source.x0 || 0},${source.y0 || 0})`)
                 .attr('cursor', 'pointer');
 
             // --- Main Member Circle ---
@@ -401,7 +401,7 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
                 .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
 
             // Ensure visualization fits
-            const nodesHeight = nodes.length * 50; // VERY rough estimate
+            // const nodesHeight = nodes.length * 50; // VERY rough estimate
             // Better: update SVG Height based on max depth
             let maxY = 0;
             root.each((d: any) => { if (d.y > maxY) maxY = d.y; });
@@ -423,7 +423,7 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
             // EXIT
             const nodeExit = node.exit().transition()
                 .duration(duration)
-                .attr('transform', (d) => `translate(${source.x},${source.y})`)
+                .attr('transform', (_d) => `translate(${source.x},${source.y})`)
                 .remove();
 
             nodeExit.select('circle')
@@ -438,7 +438,7 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
 
             const linkEnter = link.enter().insert('path', 'g')
                 .attr('class', 'link')
-                .attr('d', (d) => {
+                .attr('d', (_d) => {
                     const o = { x: source.x0 || 0, y: source.y0 || 0 };
                     return d3.linkVertical()({ source: o, target: o } as any);
                 })
@@ -457,7 +457,7 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
 
             link.exit().transition()
                 .duration(duration)
-                .attr('d', (d) => {
+                .attr('d', (_d) => {
                     const o = { x: source.x, y: source.y };
                     return d3.linkVertical()({ source: o, target: o } as any);
                 })
@@ -469,7 +469,7 @@ export default function FamilyTreeD3({ family, unassignedMembers = [] }: FamilyT
             });
         }
 
-        function click(event: any, d: MetricNode) {
+        function click(_event: any, d: MetricNode) {
             if (d.children) {
                 d._children = d.children as MetricNode[];
                 d.children = null as any;

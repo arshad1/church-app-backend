@@ -20,11 +20,11 @@ interface Album {
 
 export default function Gallery() {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState<'albums' | 'categories'>('albums');
+    const [activeTab] = useState<'albums' | 'categories'>('albums');
     const [categories, setCategories] = useState<Category[]>([]);
     const [albums, setAlbums] = useState<Album[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<number | 'all'>('all');
-    const [loading, setLoading] = useState(true);
+    // const [loading, setLoading] = useState(true);
 
     // Modals
     const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -53,7 +53,7 @@ export default function Gallery() {
         } catch (error) {
             console.error('Error loading gallery data:', error);
         } finally {
-            setLoading(false);
+            // setLoading(false);
         }
     };
 
@@ -144,8 +144,8 @@ export default function Gallery() {
                 <button
                     onClick={() => setSelectedCategory('all')}
                     className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${selectedCategory === 'all'
-                            ? 'bg-gray-900 text-white shadow-md'
-                            : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-100'
+                        ? 'bg-gray-900 text-white shadow-md'
+                        : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-100'
                         }`}
                 >
                     All Albums
@@ -155,8 +155,8 @@ export default function Gallery() {
                         key={cat.id}
                         onClick={() => setSelectedCategory(cat.id)}
                         className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${selectedCategory === cat.id
-                                ? 'bg-gray-900 text-white shadow-md'
-                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-100'
+                            ? 'bg-gray-900 text-white shadow-md'
+                            : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-100'
                             }`}
                     >
                         {cat.name} <span className="opacity-60 ml-1 text-xs">{cat._count?.albums || 0}</span>
