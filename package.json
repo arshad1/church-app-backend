@@ -4,10 +4,14 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon --exec ts-node --transpile-only src/server.ts",
-    "build": "tsc && cd admin-panel && npm run build",
+    "generate-schema": "node scripts/generate-schema.js",
+    "postinstall": "npm run generate-schema && prisma generate",
+    "dev": "npm run generate-schema && nodemon --exec ts-node --transpile-only src/server.ts",
+    "build": "npm run generate-schema && tsc && cd admin-panel && npm run build",
     "build:admin": "cd admin-panel && npm run build",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "use:mysql": "cross-env DB_PROVIDER=mysql npm run generate-schema && prisma generate",
+    "use:postgres": "cross-env DB_PROVIDER=postgresql npm run generate-schema && prisma generate"
   },
   "keywords": [],
   "author": "",
@@ -33,6 +37,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.0.6",
     "@types/swagger-ui-express": "^4.1.8",
+    "cross-env": "^10.1.0",
     "nodemon": "^3.1.11",
     "prisma": "^5.22.0",
     "ts-node": "^10.9.2",
