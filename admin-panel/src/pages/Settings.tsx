@@ -11,6 +11,12 @@ interface Settings {
     email: string;
     website: string;
     logoUrl?: string;
+    vicar?: string;
+    trustee?: string;
+    secretary?: string;
+    locationMapUrl?: string;
+    latitude?: number;
+    longitude?: number;
     firebaseConfig?: string;
 }
 
@@ -24,6 +30,12 @@ export default function Settings() {
         phone: '',
         email: '',
         website: '',
+        vicar: '',
+        trustee: '',
+        secretary: '',
+        locationMapUrl: '',
+        latitude: 0,
+        longitude: 0,
     });
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
@@ -139,11 +151,11 @@ export default function Settings() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="md:col-span-2">
                             <label className="block text-sm font-bold text-gray-700 mb-2">Address</label>
-                            <input
-                                type="text"
+                            <textarea
+                                rows={3}
                                 value={settings.address || ''}
                                 onChange={e => setSettings({ ...settings, address: e.target.value })}
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none resize-none"
                             />
                         </div>
 
@@ -174,6 +186,73 @@ export default function Settings() {
                                 value={settings.website || ''}
                                 onChange={e => setSettings({ ...settings, website: e.target.value })}
                                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* About Us / Leadership Section */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 pb-4 border-b border-gray-50">Leadership & Location</h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Vicar</label>
+                            <input
+                                type="text"
+                                value={settings.vicar || ''}
+                                onChange={e => setSettings({ ...settings, vicar: e.target.value })}
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Trustee</label>
+                            <input
+                                type="text"
+                                value={settings.trustee || ''}
+                                onChange={e => setSettings({ ...settings, trustee: e.target.value })}
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Secretary</label>
+                            <input
+                                type="text"
+                                value={settings.secretary || ''}
+                                onChange={e => setSettings({ ...settings, secretary: e.target.value })}
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Location Map URL (Legacy)</label>
+                            <input
+                                type="url"
+                                value={settings.locationMapUrl || ''}
+                                onChange={e => setSettings({ ...settings, locationMapUrl: e.target.value })}
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                placeholder="https://maps.google.com/..."
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Latitude</label>
+                            <input
+                                type="number"
+                                step="any"
+                                value={settings.latitude || ''}
+                                onChange={e => setSettings({ ...settings, latitude: parseFloat(e.target.value) })}
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                placeholder="e.g. 51.5"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Longitude</label>
+                            <input
+                                type="number"
+                                step="any"
+                                value={settings.longitude || ''}
+                                onChange={e => setSettings({ ...settings, longitude: parseFloat(e.target.value) })}
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                placeholder="e.g. -0.09"
                             />
                         </div>
                     </div>

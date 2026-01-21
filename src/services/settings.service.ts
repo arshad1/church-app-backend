@@ -17,8 +17,9 @@ export const getSettings = async () => {
 
 export const updateSettings = async (data: any) => {
     const settings = await getSettings();
+    const { id, ...updateData } = data; // Remove ID from payload
     return prisma.churchSettings.update({
         where: { id: settings.id },
-        data,
+        data: updateData,
     });
 };

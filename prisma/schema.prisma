@@ -192,7 +192,13 @@ model ChurchSettings {
   description String?
   firebaseConfig String?  @db.Text // Store Firebase Service Account JSON
   showRandomVerse Boolean  @default(false)
-  updatedAt   DateTime @updatedAt
+  vicar           String?
+  trustee         String?
+  secretary       String?
+  locationMapUrl  String?
+  latitude        Float?
+  longitude       Float?
+  updatedAt       DateTime @updatedAt
 }
 
 model GalleryCategory {
