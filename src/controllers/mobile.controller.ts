@@ -3,6 +3,7 @@ import * as userService from '../services/user.service';
 import * as memberService from '../services/member.service';
 import * as familyService from '../services/family.service';
 import * as settingsService from '../services/settings.service';
+import prisma from '../utils/prisma';
 
 /**
  * Get the current user's deep profile including Family and Member details.
@@ -418,3 +419,36 @@ export const updateMyFamily = async (req: Request, res: Response) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+/**
+ * Get all families for directory view
+ */
+export const getAllFamilies = async (req: Request, res: Response) => {
+    try {
+        // Fetch all families with houses and members
+        const families = await prisma.family.findMany({
+            include: {
+                houses: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+                members: {
+                    select: {
+                        id: true,
+                        name: true,
+                        relationshipToHead: true,
+                    },
+                },
+            },
+            orderBy: { name: 'asc' },
+        });
+
+        res.json(families);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+

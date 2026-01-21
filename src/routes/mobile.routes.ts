@@ -24,6 +24,7 @@ router.put('/family', mobileController.updateMyFamily);
 
 // Directory
 router.get('/directory', mobileController.getDirectory);
+router.get('/families', mobileController.getAllFamilies);
 
 // Content - Read-only access for mobile app
 router.get('/announcements', contentController.getAnnouncements);
