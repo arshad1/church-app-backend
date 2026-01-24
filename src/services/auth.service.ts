@@ -30,6 +30,9 @@ export const login = async (identifier: string, password: string) => {
                 { email: identifier },
                 { username: identifier }
             ]
+        },
+        include: {
+            member: true
         }
     });
     if (!user) {
