@@ -26,7 +26,7 @@ export const publishEvent = async (id: number) => {
     return event;
 };
 
-export const getEvents = async (filters?: { featured?: boolean; status?: string }) => {
+export const getEvents = async (filters?: { featured?: boolean; status?: string; orderBy?: 'asc' | 'desc' }) => {
     const where: any = {};
     if (filters?.featured) {
         where.isFeatured = true;
@@ -37,7 +37,7 @@ export const getEvents = async (filters?: { featured?: boolean; status?: string 
 
     return prisma.event.findMany({
         where,
-        orderBy: { date: 'asc' },
+        orderBy: { date: filters?.orderBy || 'asc' },
     });
 };
 

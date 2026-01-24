@@ -58,7 +58,8 @@ export const getMobileEvents = async (req: Request, res: Response) => {
         // Mobile users should only see PUBLISHED events
         const events = await eventService.getEvents({
             featured,
-            status: 'PUBLISHED'
+            status: 'PUBLISHED',
+            orderBy: 'desc'
         });
         res.json(events);
     } catch (error: any) {
