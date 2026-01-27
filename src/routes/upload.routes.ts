@@ -38,8 +38,8 @@ router.post('/upload', upload.single('image'), (req, res) => {
             return res.status(400).json({ message: 'No file uploaded' });
         }
 
-        // Return complete URL
-        const fileUrl = `${req.protocol}://${req.get('host')}/uploads/profiles/${req.file.filename}`;
+        // Return relative URL to avoid Mixed Content issues (http vs https)
+        const fileUrl = `/uploads/profiles/${req.file.filename}`;
         res.json({ url: fileUrl });
     } catch (error: any) {
         res.status(500).json({ message: error.message });

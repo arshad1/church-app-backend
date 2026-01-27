@@ -12,6 +12,11 @@ export const getSettings = async () => {
         });
     }
 
+    // Runtime fix: specific check to upgrade http to https for logoUrl to avoid Mixed Content errors
+    if (settings && settings.logoUrl && settings.logoUrl.startsWith('http://')) {
+        settings.logoUrl = settings.logoUrl.replace('http://', 'https://');
+    }
+
     return settings;
 };
 
