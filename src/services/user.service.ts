@@ -51,9 +51,9 @@ export const getAllUsers = async (params?: {
     const where: any = {};
     if (search) {
         where.OR = [
-            { email: { contains: search, mode: 'insensitive' } },
-            { username: { contains: search, mode: 'insensitive' } },
-            { member: { name: { contains: search, mode: 'insensitive' } } }
+            { email: { contains: search } },
+            { username: { contains: search } },
+            { member: { name: { contains: search } } }
         ];
     }
 
