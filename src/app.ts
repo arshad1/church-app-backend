@@ -28,8 +28,14 @@ const app = express();
 // Middleware
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
-    contentSecurityPolicy: false, // Disable CSP for now to allow images from external sources
+    contentSecurityPolicy: false,
 }));
+
+// Explicitly remove CSP header to ensure no other middleware sets it
+app.use((req, res, next) => {
+    res.removeHeader('Content-Security-Policy');
+    next();
+});
 app.use(cors());
 app.use(express.json());
 
