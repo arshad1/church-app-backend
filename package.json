@@ -7,7 +7,7 @@
     "generate-schema": "node scripts/generate-schema.js",
     "postinstall": "npm run generate-schema && prisma generate",
     "dev": "npm run generate-schema && nodemon --exec ts-node --transpile-only src/server.ts",
-    "build": "npm run generate-schema && tsc && cd admin-panel && npm install && npm run build",
+    "build": "tsc && cd admin-panel && npm install && npm run build",
     "build:admin": "cd admin-panel && npm install && npm run build",
     "start": "node dist/server.js",
     "use:mysql": "cross-env DB_PROVIDER=mysql npm run generate-schema && prisma generate",

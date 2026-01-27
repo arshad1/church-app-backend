@@ -438,7 +438,7 @@ export const getAllFamilies = async (req: Request, res: Response) => {
                     select: {
                         id: true,
                         name: true,
-                        relationshipToHead: true,
+                        familyRole: true,
                     },
                 },
             },
