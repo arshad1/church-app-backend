@@ -109,3 +109,30 @@ export const updateUser = async (req: Request, res: Response) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+export const resetMemberPassword = async (req: Request, res: Response) => {
+    try {
+        const memberId = parseInt(req.params.memberId as string);
+        const { password } = req.body;
+
+        if (!password) {
+            return res.status(400).json({ message: 'Password is required' });
+        }
+
+        const user = await userService.getUserByMemberId(memberId);
+        if (!user) {
+            // Attempt to create user if not exists (auto-create logic)
+            // But for reset, we usually expect it to exist.
+            // Check if member exists first
+            // For now, return 404
+            return res.status(404).json({ message: 'User account not found for this member' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await userService.updateUser(user.id, { password: hashedPassword });
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};

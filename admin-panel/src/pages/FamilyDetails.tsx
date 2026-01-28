@@ -20,6 +20,10 @@ interface Member {
         name: string;
         profileImage?: string;
     };
+    user?: {
+        id: number;
+        role?: string;
+    };
 }
 
 interface Family {

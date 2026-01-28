@@ -30,11 +30,11 @@ export default function Families() {
             setLoading(true);
             const res = await familiesAPI.getAll({ page: p, limit: l, search: s });
             setFamilies(res.data.data);
-            setTotal(res.data.total);
+            setTotal(res.data.meta.total);
 
             // Update stats if search is empty
             if (!s) {
-                setTotalFamilies(res.data.total);
+                setTotalFamilies(res.data.meta.total);
                 // Calculate avg size from first page if needed, but better to have a dedicated endpoint
                 // For now use the loaded data for a rough estimate or just show total
                 const avg = res.data.data.length > 0

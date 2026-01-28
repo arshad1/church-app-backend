@@ -173,6 +173,7 @@ export const usersAPI = {
     update: (id: number, data: any) => api.put(`/users/${id}`, data),
     delete: (id: number) => api.delete(`/users/${id}`),
     deleteBulk: (userIds: number[]) => api.post('/users/delete-bulk', { userIds }),
+    resetPassword: (memberId: number, password: string) => api.post(`/users/reset-password/${memberId}`, { password }),
 };
 
 export const housesAPI = {

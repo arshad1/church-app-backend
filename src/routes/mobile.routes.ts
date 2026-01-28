@@ -5,6 +5,8 @@ import * as eventController from '../controllers/event.controller';
 import * as galleryController from '../controllers/gallery.controller';
 import { authenticate } from '../middleware/auth.middleware';
 
+import { upload } from '../middleware/upload.middleware';
+
 const router = Router();
 
 // Public routes
@@ -17,8 +19,8 @@ router.use(authenticate);
 router.get('/profile', mobileController.getMyProfile);
 router.put('/profile', mobileController.updateMyProfile);
 router.get('/notifications', mobileController.getMobileNotifications);
-router.post('/family/members', mobileController.addFamilyMember);
-router.put('/family/members/:memberId', mobileController.updateFamilyMember);
+router.post('/family/members', upload.single('profileImage'), mobileController.addFamilyMember);
+router.put('/family/members/:memberId', upload.single('profileImage'), mobileController.updateFamilyMember);
 router.delete('/family/members/:memberId', mobileController.deleteFamilyMember);
 router.put('/family', mobileController.updateMyFamily);
 

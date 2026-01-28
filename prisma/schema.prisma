@@ -6,7 +6,7 @@
 // -------------------------------------
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -108,7 +108,7 @@ model Sacrament {
   id        Int      @id @default(autoincrement())
   type      String   // BAPTISM, CONFIRMATION, MARRIAGE, etc.
   date      DateTime
-  details   String?  @db.Text
+  details   String?
   memberId  Int
   member    Member   @relation(fields: [memberId], references: [id])
 }
@@ -116,7 +116,7 @@ model Sacrament {
 model Ministry {
   id        Int      @id @default(autoincrement())
   name      String
-  description String? @db.Text
+  description String?
   meetingSchedule String? // e.g. "Every Sunday 10 AM"
   members   MinistryMember[]
 }
@@ -133,12 +133,12 @@ model MinistryMember {
 model Event {
   id          Int      @id @default(autoincrement())
   title       String
-  description String? @db.Text
+  description String?
   type        String   @default("EVENT") // SERVICE, EVENT
   date        DateTime
   location    String?
   isLive      Boolean  @default(false)
-  liveUrl     String?  @db.Text
+  liveUrl     String?
   status      String   @default("DRAFT") // DRAFT, PUBLISHED
   isFeatured  Boolean  @default(false)
   registrations Registration[]
@@ -157,7 +157,7 @@ model Registration {
 model Announcement {
   id        Int      @id @default(autoincrement())
   title     String
-  content   String   @db.Text
+  content   String
   createdAt DateTime @default(now())
   authorId  Int
   author    User     @relation(fields: [authorId], references: [id])
@@ -167,8 +167,8 @@ model Content {
   id        Int      @id @default(autoincrement())
   type      String   // DEVOTION, BIBLE_VERSE, GALLERY
   title     String
-  body      String?  @db.Text
-  mediaUrl  String?  @db.Text
+  body      String?
+  mediaUrl  String?
   date      DateTime @default(now())
 }
 
@@ -176,7 +176,7 @@ model PrayerRequest {
   id        Int      @id @default(autoincrement())
   memberId  Int
   member    Member   @relation(fields: [memberId], references: [id])
-  request   String   @db.Text
+  request   String
   status    String   @default("PENDING") // PENDING, ACKNOWLEDGED
   createdAt DateTime @default(now())
 }
@@ -189,13 +189,13 @@ model ChurchSettings {
   email       String?
   website     String?
   logoUrl     String?
-  description String?  @db.Text
+  description String?
   firebaseConfig String?  @db.Text // Store Firebase Service Account JSON
   showRandomVerse Boolean  @default(false)
   vicar           String?
   trustee         String?
   secretary       String?
-  locationMapUrl  String?  @db.Text
+  locationMapUrl  String?
   latitude        Float?
   longitude       Float?
   updatedAt       DateTime @updatedAt
@@ -212,7 +212,7 @@ model GalleryCategory {
 model GalleryAlbum {
   id           Int      @id @default(autoincrement())
   title        String
-  description  String?  @db.Text
+  description  String?
   coverImage   String?
   date         DateTime @default(now())
   categoryId   Int
@@ -224,8 +224,8 @@ model GalleryAlbum {
 
 model GalleryImage {
   id        Int      @id @default(autoincrement())
-  url       String   @db.Text
-  caption   String?  @db.Text
+  url       String
+  caption   String?
   albumId   Int
   album     GalleryAlbum @relation(fields: [albumId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
@@ -234,21 +234,21 @@ model GalleryImage {
 model Notification {
   id        Int      @id @default(autoincrement())
   title     String
-  body      String   @db.Text
+  body      String
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
   isRead    Boolean  @default(false)
   type      String   @default("GENERAL") // GENERAL, EVENT, SACRAMENT
-  data      String?  @db.Text // JSON string for extra data (e.g. eventId)
+  data      String?  // JSON string for extra data (e.g. eventId)
   createdAt DateTime @default(now())
 }
 
 model NotificationHistory {
   id        Int      @id @default(autoincrement())
   title     String
-  body      String   @db.Text
+  body      String
   type      String   @default("BROADCAST") // BROADCAST, UNICAST
-  data      String?  @db.Text
+  data      String?
   sentAt    DateTime @default(now())
   sentBy    Int?     // Optional: ID of admin who sent it
   status    String   @default("SENT") // SENT, DRAFT

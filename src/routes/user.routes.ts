@@ -18,6 +18,7 @@ router.post('/', authenticate, isAdmin, userController.createUser);
 router.put('/:id', authenticate, isAdmin, userController.updateUser);
 router.delete('/:id', authenticate, isAdmin, userController.deleteUser);
 router.post('/delete-bulk', authenticate, isAdmin, userController.bulkDeleteUsers);
+router.post('/reset-password/:memberId', authenticate, isAdmin, userController.resetMemberPassword);
 // router.put('/:id/role', authenticate, isAdmin, userController.updateUserRole); // Superseded by general update
 
 export default router;

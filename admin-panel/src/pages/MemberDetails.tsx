@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { membersAPI } from '../services/api';
+import { membersAPI, usersAPI } from '../services/api';
 
 interface Sacrament {
     id: number;
@@ -164,6 +164,40 @@ export default function MemberDetails() {
                     Modify Records
                 </button>
             </div>
+
+            {/* Password Reset Action */}
+            {member.user && (
+                <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-bold text-blue-900">App Account & Security</h4>
+                            <p className="text-xs text-blue-700">Manage login credentials for this member</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={async () => {
+                            const newPassword = prompt('Enter new password for this user:');
+                            if (newPassword) {
+                                try {
+                                    await usersAPI.resetPassword(Number(member.id), newPassword);
+                                    alert('Password updated successfully');
+                                } catch (error) {
+                                    console.error(error);
+                                    alert('Failed to update password');
+                                }
+                            }
+                        }}
+                        className="px-4 py-2 bg-white text-blue-700 font-bold text-xs uppercase tracking-wider rounded-lg shadow-sm hover:shadow-md transition-all border border-blue-100"
+                    >
+                        Reset Password
+                    </button>
+                </div>
+            )}
 
             {/* Profile Overview Card */}
             <div className="bg-white rounded-[2rem] shadow-xl shadow-gray-200/50 p-10 border border-gray-50 relative overflow-hidden">

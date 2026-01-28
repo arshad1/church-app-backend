@@ -10,6 +10,14 @@ export const getAllFamilies = async (page: number = 1, limit: number = 10, searc
             { address: { contains: search } },
             { phone: { contains: search } },
             { houseName: { contains: search } },
+            // Search in members as well
+            {
+                members: {
+                    some: {
+                        name: { contains: search }
+                    }
+                }
+            }
         ];
     }
 
@@ -17,27 +25,44 @@ export const getAllFamilies = async (page: number = 1, limit: number = 10, searc
         prisma.family.findMany({
             where,
             include: {
-                members: {
+                houses: {
                     select: {
                         id: true,
                         name: true,
-                        email: true,
-                        phone: true,
-                        profileImage: true,
-                        familyRole: true,
-                        status: true,
-                        headOfFamily: true,
+                        members: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                phone: true,
+                                profileImage: true,
+                                familyRole: true,
+                                status: true,
+                                headOfFamily: true,
+                                user: {
+                                    select: { id: true }
+                                }
+                            },
+                        },
                     },
                 },
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { name: 'asc' },
             skip,
             take: limit,
         }),
         prisma.family.count({ where }),
     ]);
 
-    return { data, total };
+    return {
+        data,
+        meta: {
+            total,
+            page,
+            limit,
+            pages: Math.ceil(total / limit)
+        }
+    };
 };
 
 export const getFamilyById = async (id: number) => {
@@ -57,6 +82,9 @@ export const getFamilyById = async (id: number) => {
                             status: true,
                             headOfFamily: true,
                             sacraments: true,
+                            user: {
+                                select: { id: true, role: true }
+                            },
                             spouse: {
                                 select: {
                                     id: true,
@@ -80,6 +108,9 @@ export const getFamilyById = async (id: number) => {
                     status: true,
                     headOfFamily: true,
                     sacraments: true,
+                    user: {
+                        select: { id: true, role: true }
+                    },
                     spouse: {
                         select: {
                             id: true,

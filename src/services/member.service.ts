@@ -185,10 +185,16 @@ export const createMember = async (data: {
 };
 
 export const updateMember = async (id: number, data: any) => {
-    return prisma.member.update({
+    const member = await prisma.member.update({
         where: { id },
         data,
     });
+
+    if (member.headOfFamily || member.familyRole === 'HEAD') {
+        await createAppUserForMember(member);
+    }
+
+    return member;
 };
 
 export const deleteMember = async (id: number) => {

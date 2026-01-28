@@ -7,13 +7,13 @@
     },
     "servers": [
         {
-            "url": "http://127.0.0.1:3000/api"
+            "url": "http://127.0.0.1:3100/api"
         },
         {
-            "url": "http://localhost:3000/api"
+            "url": "http://localhost:3100/api"
         },
         {
-            "url": "http://192.168.0.187:3000/api"
+            "url": "http://[IP_ADDRESS]/api"
         }
     ],
     "components": {
@@ -299,7 +299,7 @@
                 ],
                 "requestBody": {
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "type": "object",
                                 "required": [
@@ -347,6 +347,10 @@
                                     },
                                     "spouseId": {
                                         "type": "integer"
+                                    },
+                                    "profileImage": {
+                                        "type": "string",
+                                        "format": "binary"
                                     }
                                 }
                             }
@@ -383,7 +387,7 @@
                 ],
                 "requestBody": {
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "type": "object",
                                 "properties": {
@@ -402,6 +406,10 @@
                                     },
                                     "relationship": {
                                         "type": "string"
+                                    },
+                                    "profileImage": {
+                                        "type": "string",
+                                        "format": "binary"
                                     }
                                 }
                             }
@@ -489,7 +497,7 @@
                         "bearerAuth": []
                     }
                 ],
-                "summary": "Get member directory",
+                "summary": "Get member directory (grouped by family)",
                 "tags": [
                     "Mobile"
                 ],
@@ -499,12 +507,187 @@
                         "in": "query",
                         "schema": {
                             "type": "string"
-                        }
+                        },
+                        "description": "Search by family name, member name, house, address, phone"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        },
+                        "description": "Page number"
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 20
+                        },
+                        "description": "Items per page"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of active members"
+                        "description": "Paginated list of families with members",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "houseName": {
+                                                        "type": "string"
+                                                    },
+                                                    "address": {
+                                                        "type": "string"
+                                                    },
+                                                    "phone": {
+                                                        "type": "string"
+                                                    },
+                                                    "houses": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "name": {
+                                                                    "type": "string"
+                                                                },
+                                                                "members": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "id": {
+                                                                                "type": "integer"
+                                                                            },
+                                                                            "name": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "familyRole": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "headOfFamily": {
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "profileImage": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "phone": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer"
+                                                },
+                                                "page": {
+                                                    "type": "integer"
+                                                },
+                                                "limit": {
+                                                    "type": "integer"
+                                                },
+                                                "pages": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/mobile/families": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "summary": "Get all families (Simplified)",
+                "tags": [
+                    "Mobile"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of all families with basic member info",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer"
+                                            },
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "houses": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "members": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        },
+                                                        "familyRole": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

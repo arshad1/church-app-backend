@@ -87,15 +87,12 @@ export const getSettings = async (req: Request, res: Response) => {
 export const getDirectory = async (req: Request, res: Response) => {
     try {
         const { search } = req.query;
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
 
-        const members = await memberService.getAllMembers({
-            status: 'ACTIVE',
-            search: (search as string) || ''
-        });
+        const result = await familyService.getAllFamilies(page, limit, search as string);
 
-        // Map to a simplified directory view if needed, or return full object
-        // For now, returning full object but ensuring only ACTIVE members are shown
-        res.json(members);
+        res.json(result);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
@@ -264,7 +261,8 @@ export const addFamilyMember = async (req: Request, res: Response) => {
             dob: dob ? new Date(dob) : undefined,
             gender,
             houseId: targetHouseId,
-            spouseId: spouseId ? parseInt(spouseId) : undefined
+            spouseId: spouseId ? parseInt(spouseId) : undefined,
+            profileImage: req.file ? `/uploads/profiles/${req.file.filename}` : undefined
         });
 
         // If the new member is a HEAD, we should probably mark them as headOfFamily=true?
@@ -332,7 +330,11 @@ export const updateFamilyMember = async (req: Request, res: Response) => {
         if (dob) updateData.dob = new Date(dob);
         if (relationship) updateData.familyRole = relationship;
         if (gender) updateData.gender = gender;
-        if (req.body.profileImage) updateData.profileImage = req.body.profileImage;
+        if (req.file) {
+            updateData.profileImage = `/uploads/profiles/${req.file.filename}`;
+        } else if (req.body.profileImage) {
+            updateData.profileImage = req.body.profileImage;
+        }
         if (req.body.spouseId) updateData.spouseId = parseInt(req.body.spouseId);
 
         const updatedMember = await memberService.updateMember(memberIdToUpdate, updateData);
