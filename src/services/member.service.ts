@@ -169,12 +169,19 @@ export const createMember = async (data: {
     familyRole?: string;
     dob?: Date;
     gender?: string;
-    houseId?: number;
-    spouseId?: number;
+    houseId?: number | string;
+    spouseId?: number | string;
     headOfFamily?: boolean;
 }) => {
+    const sanitizedData = {
+        ...data,
+        houseId: data.houseId ? Number(data.houseId) : null,
+        spouseId: data.spouseId ? Number(data.spouseId) : null,
+        familyId: data.familyId ? Number(data.familyId) : undefined,
+    };
+
     const member = await prisma.member.create({
-        data,
+        data: sanitizedData as any,
     });
 
     if (member.headOfFamily || member.familyRole === 'HEAD') {
@@ -185,9 +192,21 @@ export const createMember = async (data: {
 };
 
 export const updateMember = async (id: number, data: any) => {
+    const sanitizedData = { ...data };
+
+    if (data.houseId !== undefined) {
+        sanitizedData.houseId = data.houseId ? Number(data.houseId) : null;
+    }
+    if (data.spouseId !== undefined) {
+        sanitizedData.spouseId = data.spouseId ? Number(data.spouseId) : null;
+    }
+    if (data.familyId !== undefined) {
+        sanitizedData.familyId = Number(data.familyId);
+    }
+
     const member = await prisma.member.update({
         where: { id },
-        data,
+        data: sanitizedData,
     });
 
     if (member.headOfFamily || member.familyRole === 'HEAD') {
